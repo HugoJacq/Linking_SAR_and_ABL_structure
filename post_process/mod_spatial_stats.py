@@ -546,7 +546,7 @@ def save_S_n_SAR(dsSAR,N,d_boxes,path_save):
             origin_sat[k,0],origin_sat[k,1] = indsampleO,indlineO
         coords={'nboxe':np.arange(1,Nboxe+1),'lx': lx,'ly':ly,'dim_origin':['lon','lat'],'dim_origin_sat':['sample','line']}
         data_vars = {'S_'+str(N):(['nboxe','lx','ly'],S_n.data,{'long_name':str(N)+'th order structure function of sigma0'}),
-                     'var':(['nboxe'],variance,{'long_name':'variance of sigma0_detrend'}),
+                     'variance':(['nboxe'],variance,{'long_name':'variance of sigma0_detrend'}),
                      'origin':(['nboxe','dim_origin'],origin,{'long_name':'origine of the boxe in 0:lon 1:lat'}),
                      'origin_sat':(['nboxe','dim_origin_sat'],origin_sat,{'long_name':'origin of the boxe in satellite 0:sample 1:line'}),
                 }
@@ -679,7 +679,7 @@ def save_S_n_LES(dsCS,VAR,atZ,N,path_save):
         ds.to_netcdf(path=name_out,mode='w')
         ds.close()
 
-def Plot_S_n(dsS_n,nameA,N,path_save):
+def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_save='./'):
     """
     This function plots the 2D spatial structure function of Array, with a overview of the array
 
@@ -687,6 +687,7 @@ def Plot_S_n(dsS_n,nameA,N,path_save):
         - dsS_n : xarray Dataset with S_n,lx,ly
         - nameA : name of the array
         - N : order of the structure function
+        - L_Nboxe : Liste of int with number of boxes to plot
         - path_save : where to save figures
     OUTPUT:
         - 1 saved figure at 'path_save' with : Nth order structure function
@@ -694,17 +695,12 @@ def Plot_S_n(dsS_n,nameA,N,path_save):
     S_n = dsS_n['S_'+str(N)]
     lx = S_n.lx
     ly = S_n.ly
-    Nboxe = len(S_n.nboxe)
-
-#     bornesNth_str = {'2':{'M10':[[3,7],[0.2,0.8]],
-# #                     'sig0':[[0.3,0.6],[0,0.003]],},
-# #                 '3':{'M10':[[3,7],[-0.6,0.6]],
-# #                     'sig0':[[0.3,0.6],[-0.0001,0.0001]],}  }
+    Nboxe = len(L_Nboxe)
 
     # plot settings
     aspect = 1
-    figsize = (20,5)
-    figsize2 = (15,5)
+    figsize = (20,5) # cartesian
+    figsize2 = (15,5) # polar
     dpi = 200
     cmap = 'plasma'
     if nameA[:3] =='M10':
@@ -718,54 +714,51 @@ def Plot_S_n(dsS_n,nameA,N,path_save):
         vmin,vmax = 0.0001,0.0002
         resolution = SAR_res
     else:
-        coeff = 1.
-        nameX,nameY = '',''
+        coeffx,coeffy = 1.,1.
         vmin,vmax = 0,1
+        resolution = 1
 
     # cartesian plot
     fig, ax = plt.subplots(1,Nboxe,figsize = figsize,constrained_layout=True,dpi=dpi)
-    for k in range(Nboxe):
-        s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[k,:,:],cmap=cmap,vmin=vmin,vmax=vmax,shading='nearest')
+    for k,boxe in enumerate(L_Nboxe):
+        indboxe = nearest(dsS_n.nboxe.values,boxe)
+        s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[indboxe,:,:],cmap=cmap,vmin=vmin,vmax=vmax,shading='nearest')
         plt.colorbar(s,ax=ax[k],aspect=50,pad=0.01)
         ax[k].set_ylabel('ly (km)')
         ax[k].set_xlabel('lx (km)')
-        ax[k].set_title(r'$S_'+str(N)+r'^{lx,ly}$'+' of '+nameA+' boxe'+str(k+1))
+        ax[k].set_title(r'$S_'+str(N)+r'^{lx,ly}$'+' of '+nameA+' boxe'+str(boxe))
         XMAX = min(ax[k].get_ylim()[1],ax[k].get_xlim()[1])
         ax[k].set_xlim([-XMAX,XMAX])
         ax[k].set_ylim([-XMAX,XMAX])
         ax[k].set_aspect(aspect)
-        #ax[k].xaxis.set_major_locator(ticker.MultipleLocator(2))
-        #ax[k].yaxis.set_major_locator(ticker.MultipleLocator(2))
+        ax[k].xaxis.set_major_locator(ticker.MultipleLocator(2))
+        ax[k].yaxis.set_major_locator(ticker.MultipleLocator(2))
     fig.savefig(path_save+'S'+str(N)+'_lxly_'+nameA)
-
 
     # polar plot
     fig, ax = plt.subplots(1,Nboxe,figsize = figsize2,constrained_layout=True,dpi=dpi)
-    for k in range(Nboxe):
-        axis_t, axis_r, size = polar_axis(S_n[k,:,:].values, 180)
+    for k,boxe in enumerate(L_Nboxe):
+        indboxe = nearest(dsS_n.nboxe.values,boxe)
+        axis_t, axis_r, _ = polar_axis(S_n[indboxe,:,:].values, 180)
         angle_from_north = 90-(-axis_t*180/np.pi)+azimuth_sat
-        S2new_p = field_2D_polar(S_n[k,:,:].values, 180)
+        S2new_p = field_2D_polar(S_n[indboxe,:,:].values, 180)
         s = ax[k].pcolormesh(axis_r*resolution/1000,angle_from_north,S2new_p,cmap=cmap,shading='nearest') # ,vmin=vmin,vmax=vmax
         plt.colorbar(s,ax=ax[k],aspect=50,pad=0.01)
         ax[k].set_ylabel(r'$\theta$')
         ax[k].set_xlabel('r (km)')
-        ax[k].set_title(r'$S_'+str(N)+r'^{r,\theta}$'+' of '+nameA+' boxe'+str(k+1))
-        #XMAX = min(ax[k].get_ylim()[1],ax[k].get_xlim()[1])
-        #ax[k].set_xlim([-XMAX,XMAX])
-        #ax[k].set_ylim([-XMAX,XMAX])
-        #ax[k].set_aspect(aspect)
-        #ax[k].xaxis.set_major_locator(ticker.MultipleLocator(2))
-        #ax[k].yaxis.set_major_locator(ticker.MultipleLocator(2))
+        ax[k].set_title(r'$S_'+str(N)+r'^{r,\theta}$'+' of '+nameA+' boxe'+str(boxe))
+        ax[k].xaxis.set_major_locator(ticker.MultipleLocator(2))
+        ax[k].yaxis.set_major_locator(ticker.MultipleLocator(45))
     fig.savefig(path_save+'S'+str(N)+'_lxly_'+nameA+'_polar')
 
-def compute_integral_scale_at_tht(var,S2_polar,r,atTheta,resolution):
+def compute_integral_scale_at_tht(variance,S2_polar,r,atTheta,resolution):
     """
     This function computes the integral length scale of 'S2_polar' for a specific 'atTheta'
     It also provides the data that is need to fit an ellipse.
 
 
     INPUT:
-        - var : variance of the signal
+        - variance : variance of the signal
         - S2_polar : 2nd order structure function in polar coordinate (theta,r)
         - atTheta : value of theta (in rad)
         - resolution  : along r dimension, in meters
@@ -776,7 +769,7 @@ def compute_integral_scale_at_tht(var,S2_polar,r,atTheta,resolution):
     Note :  j'ai vérifié que ca marche
     """
     DATA_TO_FIT = np.zeros(2)
-    autocorr = 1-1/(2*var)*S2_polar
+    autocorr = 1-1/(2*variance)*S2_polar
     autocorr = autocorr/autocorr[0]
     iddd = np.where(np.sign(autocorr)!=1) # look for first negative autocorr
     if len(iddd[0])==0:
@@ -792,10 +785,9 @@ def compute_integral_scale_at_tht(var,S2_polar,r,atTheta,resolution):
 
 def S2_analysis(source,dsS2,d_boxes,path_out):
     """
-    This function uses diagnostics from [1] to analyse the 2nd order structure function.
+    This function uses diagnostics from [1] to analyse the 2nd order structure function and fit an ellipse on S2.
 
     METHOD:
-
         [1] : Brilouet, P. ‐E., Bouniol, D., Couvreux, F., Ayet, A., Granero‐Belinchon, C., Lothon, M., & Mouche, A. (2023). 
                 "Trade Wind Boundary Layer Turbulence and Shallow Precipitating Convection: New Insights Combining SAR Images, 
                 Satellite Brightness Temperature, and Airborne In Situ Measurements"
@@ -807,7 +799,7 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
         - d_boxes : dict with boxe location and width and height
         - path_out : where to save the texte file
     OUTPUT:
-        A text file with :
+        A text file save at 'path_out' with:
         - L_E_MIN,L_E_MAX : min and max integral scales
         - SMALL_RAD_ELLIPSE : small radius of fitted ellipse
         - BIG_RAD_ELLIPSE : big radius of fitted ellipse
@@ -820,24 +812,15 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
     # in module_cst : azimuth_sat = -17 # degree
     
     d_boxes = d_boxes[source]
-    Nboxe = len(dsS2.nboxe)
+    Nboxe = len(dsS2.nboxe) # loop over all boxes
     if source=='LES':
         resolution = LES_res
     elif source=='SAR':
         resolution = SAR_res
     else:
         raise Exception('You want to use data from '+source+' but it doesnt exist')
-    
-    # PLAN
-    # boucle sur les boxes
-    #   calcul longueur intégrales
-    #       j'ai Le(theta)
-    #   calcul direction roll
-    #   fit ellipse
-    #       reduction des Le aux structures
 
-
-    # initialisation de ce que je retourne : parametres ellipse, ...
+    # initialisation of arrays 
     DIR_ROLL_FROM_NORTH = np.zeros(Nboxe)
     L_E_MIN,L_E_MAX = np.zeros(Nboxe),np.zeros(Nboxe)
     SMALL_RAD_ELLIPSE,BIG_RAD_ELLIPSE = np.zeros(Nboxe),np.zeros(Nboxe)
@@ -847,14 +830,13 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
     DELTA_AUTOCORR = np.zeros(Nboxe)
 
     for k in range(Nboxe):
-
         # get S2 in polar coordinates
         ds = dsS2.isel(nboxe=k)
         S2 = ds.S_2
-        var = ds.var # this i need to add to the files
+        var = ds.variance.values # this i need to add to the files
         theta, r, size = polar_axis(S2.values, 180)
         S2_polar = field_2D_polar(S2.values, 180)
-        
+
         # direction is given by minimum of S2
         CUMUL_S2 = np.sum(S2_polar[:,1:],axis=1) # sum over all r, after first
         indice_para = np.argmin(CUMUL_S2)
@@ -867,7 +849,7 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
         Le = np.zeros(len(theta))
         DATA_TO_FIT = np.zeros((len(theta),2))
         for i,angle in enumerate(theta):
-            Le[i],DATA_TO_FIT[i] = compute_integral_scale_at_tht(var,S2_polar,r,resolution)
+            Le[i],DATA_TO_FIT[i] = compute_integral_scale_at_tht(var,S2_polar[i,:],r,angle,resolution)
             
         # Ellipse fitting
         #       first : remove data where no integral length scale has been computed
@@ -922,27 +904,26 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
         L_OS[k] = roll_size
         DELTA_AUTOCORR[k] = diff_tempo
 
+    # print('DIR_ROLL_FROM_NORTH')
+    # print(DIR_ROLL_FROM_NORTH)
+    # print('L_E_MIN')
+    # print(L_E_MIN)
+    # print('L_E_MAX')
+    # print(L_E_MAX)
+    # print('SMALL_RAD_ELLIPSE')
+    # print(SMALL_RAD_ELLIPSE)
+    # print('BIG_RAD_ELLIPSE')
+    # print(BIG_RAD_ELLIPSE)
+    # print('FLATNESS_ELLIPSE')
+    # print(FLATNESS_ELLIPSE)
+    # print('DIR_ELLIPSE_FROM_NORTH')
+    # print(DIR_ELLIPSE_FROM_NORTH)
+    # print('L_OS')
+    # print(L_OS)
+    # print('DELTA_AUTOCORR')
+    # print(DELTA_AUTOCORR)
 
-    print('DIR_ROLL_FROM_NORTH')
-    print(DIR_ROLL_FROM_NORTH)
-    print('L_E_MIN')
-    print(L_E_MIN)
-    print('L_E_MAX')
-    print(L_E_MAX)
-    print('SMALL_RAD_ELLIPSE')
-    print(SMALL_RAD_ELLIPSE)
-    print('BIG_RAD_ELLIPSE')
-    print(BIG_RAD_ELLIPSE)
-    print('FLATNESS_ELLIPSE')
-    print(FLATNESS_ELLIPSE)
-    print('DIR_ELLIPSE_FROM_NORTH')
-    print(DIR_ELLIPSE_FROM_NORTH)
-    print('L_OS')
-    print(L_OS)
-    print('DELTA_AUTOCORR')
-    print(DELTA_AUTOCORR)
-
-    file_a_moi = 'SAR_clear_sky_parameters.txt' 
+    file_a_moi = source+'_clear_sky_parameters.txt' 
     fullname = path_out + file_a_moi
     file_final = open (fullname, 'w') 
     file_final.write(
@@ -960,9 +941,10 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
     '# C12: diff 2nd max R(r) - min R(r) for L_OS calculation  \n'\
     '# C13: Length organized structure L_OS (m)   \n'\
     '#-------------------------------------------------------------- \n')
+    print(d_boxes['boxes'])
     for index in range(Nboxe):
         file_final.write('%.0f\t %.3f\t %.3f\t %.0f\t %.0f\t %.0f\t %.0f\t %.0f\t %.2f\t %.1f\t %.2f\t %.0f\t\n' %
-                        (index+1,d_boxes['boxes'][str(index)]['O'][1],d_boxes['boxes'][str(index)]['O'][1],DIR_ROLL_FROM_NORTH[index],L_E_MIN[index],L_E_MAX[index],
+                        (index+1,d_boxes['boxes'][str(index+1)]['O'][0],d_boxes['boxes'][str(index+1)]['O'][1],DIR_ROLL_FROM_NORTH[index],L_E_MIN[index],L_E_MAX[index],
                         BIG_RAD_ELLIPSE[index],SMALL_RAD_ELLIPSE[index],FLATNESS_ELLIPSE[index],DIR_ELLIPSE_FROM_NORTH[index],DELTA_AUTOCORR[index],
                         L_OS[index]))
 

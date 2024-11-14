@@ -37,14 +37,14 @@ start = time.time()
 # INPUT ZONE ============================================================================================
 #
 CASE = '1' # 1 is ERA5-like conditions
-SAR_SIZE = 'minimal' # amount of vignette. 'all' or 'small' or 'small_only' or 'minimal'
+SAR_SIZE = 'small' # amount of vignette. 'all' or 'small' or 'small_only' or 'minimal'
 # First look -----------------------------------------------------------
 PLOT_10m_WIND = False # 10m wind and SAR roughness for first 3 boxes
-WHERE_ARE_THE_BOXES = True # both SAR and LES
+WHERE_ARE_THE_BOXES = False # both SAR and LES
 # Geometrical analysis -------------------------------------------------
 PLOT_2D_COVARIANCE = False 
 PLOT_2D_SKEWNESS = False
-S2_ANALYSIS = False
+S2_ANALYSIS = True
 # Turbulence convergence -----------------------------------------------
 VERIFY_TURB_CONVERGENCE = False # plot spectrum at inflow
 B_KPSD = True                   # plot k*PSD(k) ?
@@ -60,7 +60,7 @@ VAR_TOPVIEW = 'W'
 
 # folder organisation --------------------------------------------------
 workdir_path = '/home/jacqhugo/WORKDIR/MNH570/'
-path_here = '/home/jacqhugo/scripts/simu_nest_aggv3/'
+path_here = '/home/jacqhugo/scripts/Linking_SAR_and_ABL_structure/post_process/'
 #path_SAR = path_here+'SAR_from_OVL/SAR_roughness_20151210t170827-20151210t170921.nc'
 path_SAR = path_here+'SAR_from_IFREMER/S1A_IW_GRDH_1SDV_20151210T170827_20151210T170856_008982_00CDEF_9AE1.nc'
 path_SST_ODYSEA = path_here+'SST_from_Ifremer/20151210-IFR-L4_GHRSST-SSTfnd-ODYSSEA-SAF_002-v2.0-fv1.0.nc'
@@ -227,10 +227,8 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     if PLOT_2D_COVARIANCE:
         print('* Plotting 2D covariance')
         N = 2
-        print(dsS2_LES_M10)
-        print(dsS2_SAR)
-        Plot_S_n(dsS2_SAR,'sig0',N,path_save_geometric)
-        Plot_S_n(dsS2_LES_M10,'M10',N,path_save_geometric)
+        Plot_S_n(dsS2_SAR,'sig0',N,path_save=path_save_geometric)
+        Plot_S_n(dsS2_LES_M10,'M10',N,path_save=path_save_geometric)
     if PLOT_2D_SKEWNESS:
         print('* Plotting 2D skewness')
         N = 3
@@ -241,7 +239,9 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         # compute_integral_scale_at_tht is ok      
         # test S2_analysis ?
         path_out = 'DATA_TURB/'
-        S2_analysis('SAR',dsCS,d_boxes,path_out)
+        S2_analysis('SAR',dsS2_SAR,d_boxes,path_out)
+        S2_analysis('LES',dsS2_LES_M10,d_boxes,path_out)
+
 
     # comparer échelles caractéristiques SAR vs LES.
     # > SAR
