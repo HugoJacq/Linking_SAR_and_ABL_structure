@@ -9,7 +9,7 @@ In this README, you will find a description of the files (and their origin), how
 
 This README is organised as follow:
 [0. File Tree](#-0.-File-tree)
-##1.-How-to-run-the-simulations
+[1. How to run the simulations](##1.-How-to-run-the-simulations)
 
 
 ## 0. File tree
