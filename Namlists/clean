@@ -1,0 +1,24 @@
+#!/bin/sh
+# Echo des commandes
+set -x
+ulimit -c 0
+ulimit -s unlimited
+
+# Nom de la machine
+hostname
+
+# Arrete du job des la premiere erreur
+set -e
+ls -lrt
+
+rm -f *.nc
+rm -f *.des
+rm -f OUTPUT_LISTING*
+rm -f file_for_xtransfer
+rm -f PRESSURE
+rm -rf FICHIERS_OUT
+rm -f *png
+
+ls -lrt
+
+echo "Exit status is" $? 
