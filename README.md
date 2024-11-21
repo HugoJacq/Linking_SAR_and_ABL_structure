@@ -8,8 +8,8 @@ This repo gather the material needed for the study 'Linking_SAR_and_ABL_structur
 In this README, you will find a description of the files (and their origin), how to reproduce the simulations and how to use the post-process scripts
 
 This README is organised as follow:
-[0. File Tree](#-0.-File-tree)
-[1. How to run the simulations](##1.-How-to-run-the-simulations)
+[0. File Tree](#0-file-tree)
+[1. How to run the simulations](#1-how-to-run-the-simulations)
 
 
 ## 0. File tree
