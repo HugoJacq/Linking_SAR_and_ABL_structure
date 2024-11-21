@@ -7,6 +7,11 @@
 This repo gather the material needed for the study 'Linking_SAR_and_ABL_structure'.
 In this README, you will find a description of the files (and their origin), how to reproduce the simulations and how to use the post-process scripts
 
+This README is organised as follow:
+[0. File Tree](#-0.-File-tree)
+##1.-How-to-run-the-simulations
+
+
 ## 0. File tree
 The folder `Namlists` is what you need to reproduce the simulations. The main file is `setup_big.py`, this is a python script that builds the MesoNH namlists. It is somewhat modular and you can for example easily change the initial conditions, numerical schemes and dimensions.
 ```
