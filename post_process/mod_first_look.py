@@ -16,13 +16,16 @@ def Wind_10m_in_boxes_vs_SAR(dsCS,dsSAR,indt,d_boxes,path_save):
     figsize = (5,7)
     dpi = 200
     cmap = 'Greys_r'
-    vmin,vmax = 3,7 # wind
-    sigmin,sigmax = 0.3,0.6 # sigma0
+    # vmin,vmax = 3,7 # wind
+    # sigmin,sigmax = 0.3,0.6 # sigma0
+    vmin,vmax = -0.2,0.2 # wind
+    sigmin,sigmax = -0.2,0.2 # sigma0
     indz = nearest(dsCS.level.values,10)
     ds = dsCS.isel(level=indz,time=indt)
     Nboxe = len(ds.nboxe)
     M = np.sqrt(ds.U**2+ds.V**2+ds.W**2)
-
+    Mmean = M.mean()
+    M = (M-Mmean)/Mmean
 
 
     fig, ax = plt.subplots(Nboxe,2,figsize = figsize,constrained_layout=True,dpi=dpi)
@@ -60,25 +63,29 @@ def Wind_10m_in_boxes_vs_SAR(dsCS,dsSAR,indt,d_boxes,path_save):
     elif 'sigma0_detrend' in dsSAR.keys(): # SAR from Ifremer
         res = dsSAR.sampleSpacing.values # and this is = to lineSpacing
         for kboxe,boxe in enumerate(d_boxes['SAR']['boxes']):
-            O = d_boxes['SAR']['boxes'][boxe]['O']
-            sigmin,sigmax = 0,0.1
-            sig0 = dsSAR.sigma0_detrend
-            lon = dsSAR.longitude
-            lat = dsSAR.latitude
-            # lets find line and sample index at origin of boxe (bottom left corner)
-            indlineO,indsample0 = find_indx_indy_from_2D_LatLon(lat,lon,O)
-            if indlineO==None or indsample0==None:
-                continue
-            indlineRight,indsampleRight =  int(indlineO+Lx*1000//res), int(indsample0+Lx*1000//res)  
+            if kboxe < 3:
+                O = d_boxes['SAR']['boxes'][boxe]['O']
+                #sigmin,sigmax = 0,0.1
+                sigmin,sigmax = -0.2,0.2
+                sig0 = dsSAR.sigma0_detrend
+                lon = dsSAR.longitude
+                lat = dsSAR.latitude
+                # lets find line and sample index at origin of boxe (bottom left corner)
+                indlineO,indsample0 = find_indx_indy_from_2D_LatLon(lat,lon,O)
+                if indlineO==None or indsample0==None:
+                    continue
+                indlineRight,indsampleRight =  int(indlineO+Lx*1000//res), int(indsample0+Lx*1000//res)  
 
-            sig0 = sig0.isel(line=slice(indlineO,indlineRight),sample=slice(indsample0,indsampleRight))
-            x,y = np.arange(0,len(sig0.line)*res,res),np.arange(0,len(sig0.sample)*res,res)
-            s = ax[kboxe,1].pcolormesh(x/1000,y/1000,sig0,cmap=cmap,vmin=sigmin,vmax=sigmax) # sig0.sample,sig0.line,
-            ax[kboxe,1].set_aspect(1)
-            ax[kboxe,1].xaxis.set_major_locator(ticker.MultipleLocator(5))
-            ax[kboxe,1].yaxis.set_major_locator(ticker.MultipleLocator(5))
-            ax[kboxe,1].yaxis.tick_right()
-            ax[kboxe,1].yaxis.set_label_position("right")
+                sig0 = sig0.isel(line=slice(indlineO,indlineRight),sample=slice(indsample0,indsampleRight))
+                sig0mean = sig0.mean()
+                sig0 = (sig0-sig0mean)/sig0mean
+                x,y = np.arange(0,len(sig0.line)*res,res),np.arange(0,len(sig0.sample)*res,res)
+                s = ax[kboxe,1].pcolormesh(x/1000,y/1000,sig0,cmap=cmap,vmin=sigmin,vmax=sigmax) # sig0.sample,sig0.line,
+                ax[kboxe,1].set_aspect(1)
+                ax[kboxe,1].xaxis.set_major_locator(ticker.MultipleLocator(5))
+                ax[kboxe,1].yaxis.set_major_locator(ticker.MultipleLocator(5))
+                ax[kboxe,1].yaxis.tick_right()
+                ax[kboxe,1].yaxis.set_label_position("right")
     
     
     plt.colorbar(s,ax = ax[Nboxe-1,1],label=r'$\sigma_0$',

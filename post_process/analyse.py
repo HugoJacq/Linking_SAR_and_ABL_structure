@@ -39,12 +39,12 @@ start = time.time()
 CASE = '1' # 1 is ERA5-like conditions
 SAR_SIZE = 'small' # amount of vignette. 'all' or 'small' or 'small_only' or 'minimal'
 # First look -----------------------------------------------------------
-PLOT_10m_WIND = False # 10m wind and SAR roughness for first 3 boxes
-WHERE_ARE_THE_BOXES = False # both SAR and LES
+PLOT_10m_WIND = True # 10m wind and SAR roughness for first 3 boxes
+WHERE_ARE_THE_BOXES = True # both SAR and LES
 # Geometrical analysis -------------------------------------------------
 PLOT_2D_COVARIANCE = False 
 PLOT_2D_SKEWNESS = False
-S2_ANALYSIS = True
+S2_ANALYSIS = False
 # Turbulence convergence -----------------------------------------------
 VERIFY_TURB_CONVERGENCE = False # plot spectrum at inflow
 B_KPSD = True                   # plot k*PSD(k) ?
