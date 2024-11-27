@@ -22,6 +22,27 @@ This README is organised as follow:
 [5. Contact](#5-contact)
 
 ## 0. File tree
+
+The folder `user_modification` contains the necessary piece of code the modify MesoNH v5.7.0. See [section 1](#1-how-to-run-the-simulations) for a description on how to use them.
+```
+user_modification/
+│    condsamp.f90
+│    modd_blankn.f90
+│    mode_io_write_nc4.f90
+│    mode_turb_hor_uw.f90
+│    mode_turb_ver_thermo_flux.f90
+│    default_desfmn.f90
+│    modd_condsamp.f90
+│    mode_turb_hor_dyn_corr.f90
+│    mode_turb_hor_vw.f90
+│    modn_condsamp.f90
+│    ini_modeln.f90
+│    mode_io_field_write.f90
+│    mode_turb_hor_uv.f90
+│    mode_turb_ver_dyn_flux.f90
+│    turb.f90
+```
+
 The folder `Namlists` is what you need to reproduce the simulations. The main file is `setup_big.py`, this is a python script that builds the MesoNH namlists. It is somewhat modular and you can for example easily change the initial conditions, numerical schemes and dimensions.
 ```
 Namlists/
