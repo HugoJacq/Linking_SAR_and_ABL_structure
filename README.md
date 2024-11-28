@@ -135,7 +135,7 @@ This section has been written in December of 2024 by Hugo Jacquet.
 
 ### 4.1 What are the scientific questions ?
 
-TBD
+Please have a look at the latex file.
 
 ### 4.2 What I have done
 
