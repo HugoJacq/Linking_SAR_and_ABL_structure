@@ -81,13 +81,13 @@ We used MesoNH version 5.7.0 to produce the simulations ([Lafore et al. 2018](ht
 You will need to modify the code. The modification allows the emission of two surface tracer and also the output of some subgrid fluxes.
 Please follow the procedure described in the section 2.1 of [this](https://github.com/HugoJacq/ABL_response_to_SST_front/edit/main/), with the files from the folder `user_modification` and by replacing the version of MesoNH with the version 5.7.0
 
-## 1.2 Overview of the simulation
+### 1.2 Overview of the simulation
 
 The goal is to produce a simulation that can be compared to SAR data. We use a SST as forcing (no coupling with the ocean). The case studied is the Agulhas current on the 10th of December 2015. We used a semi-realistic configuration: we use a grid-nesting setup with the father having cyclic conditions in the mean (zonal) wind direction  and open boundary conditions at North and South boundaries. The horizontal resolution is 200m with a timestep of 4s. The father domain is represented by the dark rectangle on the first image. After a 4h spinup, we spawn a smaller domain (the 'son') at 50m resolution and with a timestep of 1s (green rectangle on the first image).
 
 Numerical schemes and parametrisations are the same for both domains, the only differences are the resolution (spatial and temporal). We use the 3D version of the turbulence scheme, with Deardorff mixing length.
 
-## 1.3 Performing the simulation
+### 1.3 Performing the simulation
 
 On your preferred super-computer, run the the command `python setup_big.py`. In the upper level of where `setup_big.py` is located, this will create folders with MesoNH namlists. They are order by number (00,01,..) and should be run in this order.
 If you need to modify something about the simulation (initial conditions, number of CPUs, ...) it is better to do it on `setup_big` and then to run the script again. A saved version of the previous namelist will be generated in case you messed up.
@@ -111,11 +111,41 @@ If you need to modify something about the simulation (initial conditions, number
 
 ### 2.1 Pre-process
 
-`where_is_my_energy.py`, `verif_turb.py` and `prepare_obs.py` are pre-process scripts. `prepare_obs.py` checks some caracteristics of the fields from ERA5, SAR and SST. `where_is_my_energy.py` and `verif_turb.py` are the validation scripts for the simulation. More specifically, `verif_turb.py` is checking that the grid nesting setup is working ok b computing spectra at different distance from the inflow boundary. `where_is_my_energy.py` measure the loss of kinetic energy at the change of resolution between the two domains.
+`where_is_my_energy.py`, `verif_turb.py` and `prepare_obs.py` are pre-process scripts. 
+
+`prepare_obs.py` checks some caracteristics of the fields from ERA5, SAR and SST. `where_is_my_energy.py` and `verif_turb.py` are the validation scripts for the simulation. More specifically, `verif_turb.py` is checking that the grid nesting setup is working ok by computing spectra at different distance from the inflow boundary. In `verif_turb.py`, you will also find a tool to know how many significant digit number you need for each prognostic variable, and how to compress file to reduce diskspace. `where_is_my_energy.py` measure the loss of kinetic energy at the change of resolution between the two domains.
 
 ### 2.2 Post-process
 
 All `mod_*`  and `analyse.py` are post-process scripts. The main file is `analyse.py` and it calls functions that are in the `mod_*` files. You can ask for different plots via boolean switches: for example, setting `PLOT_10m_WIND` to `True` will plot the 10m modulus of wind in the LES and the sigma0_detrend from the SAR. Each function in the `mod_*` files are documented with a description of the function, a liste of inputs and what is the ouput.
+
+Here i provide informations about the custom files needed to plot figures. I use a Reynolds average that is an average in time, X and Y directions.
+
+#### Before plotting, building
+- `build_mean_file` in `mod_build_mean.py`: This function builds mean profiles. By default, average is over the full domain in time,X and Y. Available variables are MNH prognostic variables, and surface flux. 
+- `build_CS` in `mod_build_CS.py`: This function builds a netcdf file with coherent structures identified.
+- `save_S_n_SAR` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for SAR data. This is done for each boxe from 'd_boxes'
+- `save_S_n_LES` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for LES data. This is done for each boxe from 'd_boxes'
+
+Here i provide more details for each switches:
+
+#### First look
+- `PLOT_10m_WIND`: Plot the 10 m modulus of the wind from the LES simulations and the SAR, with rectangle for boxes (boxes are defined in `d_boxes`). LES coordinates are in km, SAR is in lat-lon. For the SAR, boxes are defined in satellite coordinate (along track and across track pixels are called line and sample respectively).
+- `WHERE_ARE_THE_BOXES`: For each boxes, plot 10 m modulus of wind in the local coordinates. For both LES and SAR. For the SAR, only the first few boxes are plotted.
+
+#### Statistics on the textures
+- `PLOT_2D_COVARIANCE`: Plots 2nd order structure function for SAR and LES, in cartesian and polar coordinates.
+- `PLOT_2D_SKEWNESS`: This is to be done
+- `S2_ANALYSIS`:  This function uses diagnostics from Brilouet et al. 2024 (see in the function) to analyse the 2nd order structure function and fit an ellipse on S2. This output text files with the ellipses parameters for each boxes and for both SAR and LES.
+
+#### Turbulence convergence
+- `VERIFY_TURB_CONVERGENCE`: This function plots the energy spectrum at the East side of the son domain. This is to know  the distance at which the turbulence is at the scale of the Son domain.
+- `B_KPSD`: wether to plot k.PSD(k) or PSD(k), used with `VERIFY_TURB_CONVERGENCE`
+
+#### Coherent structure analysis
+- `PLOT_MEAN_PROGVAR`: This function plots the profiles of mean profiles with object decomposition for all boxes defined by `d_boxes`
+- `PLOT_MEAN_FLX`: This function plots the profiles of fluxes with object decomposition (only resolved part) for all boxes defined by `d_boxes`
+- `PLOT_TopView_with_CS`: Work in progress, plot a top view of a field, with contours of the coherent structures
 
 ### 2.3 Known bugs
 (open issue if there is a new one)
@@ -124,10 +154,13 @@ TBD
 
 ## 3. Where to find SAR, SST, ERA5 data
 
+#### SAR
 The SAR data has been provided by Alexis Mouche from Ifremer, but you can extract it from the [OVL](https://ovl.oceandatalab.com/?date=2015-12-10T12:00:00&timespan=1d&extent=1608235.0302722_-5098655.4894003_4739095.7083972_-3530779.1654331&center=3173665.3693347_-4314717.3274167&zoom=7&products=3857_SAR_roughness!3857_ODYSSEA_REG_SST!3857_ODYSSEA_SST!3857_GlobCurrent_CMEMS_geostrophic_streamline!3857_AMSR_sea_ice_concentration!3857_GIBS_MODIS_Terra_CorrectedReflectance_TrueColor!3857_GIBS_MODIS_Aqua_CorrectedReflectance_TrueColor&opacity=80_100_100_60_100_49.498_100&stackLevel=100.02_50.03_30.02_120.07_40.03_50.25_50.22&filter=+A,+B,+IW,+EW,+SM,+WV,+VV,+HH&selection=1000000) tool. For this you will need to switch your browser to "phone" view (via F11) and then increase as much as you can the resolution. This is needed because the extraction feature of OVL is screen-resolution dependent. To extract data from OVL, click to the small gear icon on the top bar. This will bring the extraction tool. Then enter the desired LAT-LON coordinates to extract and process. This will give you a numpy array file and you will need to get back the X and Y dimensions with the number of points of the file and the coordinates you entered in the last step. After this, you will need to remove yourself the non valid values from the data. The file is 1.1Go.
 
+#### SST
 The SST data is also from Ifremer but it is also available on Copernicus website (SST L4 Ifremer GHRSST Odyssea): 20151210-IFR-L4_GHRSST-SSTfnd-ODYSSEA-SAF_002-v2.0-fv1.0.nc. The file is about 2.6Mo
 
+#### ERA5
 ERA5 data can be retrieved with `python ERA5_pressure_level_retrieve.py`: this will dowload a file with ERA5 variables on pressure levels. The file is about 26Mo.
 
 ## 4. What remains to do ?
@@ -143,7 +176,14 @@ TBD
 
 ### 4.3 What I think needs to be done
 
-TBD
+I split this section in two: technical needs are some improvment that I see that would be nice to have in the current state of the scripts; scientific needs are functionnalities that are not yet present but that would provide some part of the answer of the [scientific questions](#41-what-are-the-scientific-questions-).
+#### Technical needs
+
+- modify `Where_boxes` to allow selection of which SAR boxes are plotted
+- build the 3rd order structure function and plot it for LES and SAR boxes
+- finish `Plot_top_view_var`
+
+#### Scientific needs
 
 ## 5. Contact
 
