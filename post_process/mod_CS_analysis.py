@@ -171,7 +171,6 @@ def Plot_mean_flux(dsCS,dsmean,dsflx,
         - 1 figure for each flux with domain averaged variables as well as contribution from each object
         (variables are : uw,wthtv)
     """
-    print(dsCS)
     Z = dsCS.level
     zi = get_ABLH(Z,dsmean.THTvm) # Boundary layer height
     indzmax = nearest(Z.values,1.1*zi) # for integrated vertical contribution
@@ -186,10 +185,12 @@ def Plot_mean_flux(dsCS,dsmean,dsflx,
     uw_t = dsflx.FLX_UW
     uw_s = dsflx.FLX_UW_s
     uw_r = uw_t - uw_s
+    uw = u_fluc*w_fluc
     
     wthtv_t = dsflx.FLX_THvW
     wthtv_s = dsflx.FLX_THvW_s
     wthtv_r = wthtv_t - wthtv_s
+    wthtv = w_fluc*thtv_fluc
 
     # object mask
     is_up1 = xr.where( dsCS.global_mask==1,1,0 )
@@ -220,14 +221,14 @@ def Plot_mean_flux(dsCS,dsmean,dsflx,
     ax[0].plot(uw_r/norm_uw,Z/zi,c='k',label='uw(res)',ls='--')
     ax[0].plot(uw_t/norm_uw,Z/zi,c='k',label='uw(total)')
     # obj contrib
-    uw_up1, uw_ss1, uw_up2, uw_ss2, uw_down = compute_flx_contrib(uw_t,[is_up1,is_ss1,is_up2,is_ss2,is_down],function_avg)
+    uw_up1, uw_ss1, uw_up2, uw_ss2, uw_down = compute_flx_contrib(uw,[is_up1,is_ss1,is_up2,is_ss2,is_down],function_avg)
     somme = uw_up1+uw_ss1+uw_up2+uw_ss2+uw_down
-    part_up1 = mean_vertical_contrib(uw_up1,uw_t,indzmax).values
-    part_up2 = mean_vertical_contrib(uw_up2,uw_t,indzmax).values
-    part_sub1 = mean_vertical_contrib(uw_ss1,uw_t,indzmax).values
-    part_sub2 = mean_vertical_contrib(uw_ss2,uw_t,indzmax).values
-    part_down = mean_vertical_contrib(uw_down,uw_t,indzmax).values
-    obj_over_all = mean_vertical_contrib(somme,uw_t,indzmax).values
+    part_up1 = mean_vertical_contrib(uw_up1,uw_r,indzmax).values
+    part_up2 = mean_vertical_contrib(uw_up2,uw_r,indzmax).values
+    part_sub1 = mean_vertical_contrib(uw_ss1,uw_r,indzmax).values
+    part_sub2 = mean_vertical_contrib(uw_ss2,uw_r,indzmax).values
+    part_down = mean_vertical_contrib(uw_down,uw_r,indzmax).values
+    obj_over_all = mean_vertical_contrib(somme,uw_r,indzmax).values
     ax[0].plot(uw_up1/norm_uw,Z/zi,c=Lcolors['up1'],label='up1 ('+str(np.round(part_up1*100,1))+'%)')
     ax[0].plot(uw_ss1/norm_uw,Z/zi,c=Lcolors['ss1'],label='ss1 ('+str(np.round(part_sub1*100,1))+'%)')
     ax[0].plot(uw_up2/norm_uw,Z/zi,c=Lcolors['up2'],label='up2 ('+str(np.round(part_up2*100,1))+'%)')
@@ -239,14 +240,14 @@ def Plot_mean_flux(dsCS,dsmean,dsflx,
     ax[1].plot(wthtv_r/norm_wthtv,Z/zi,c='k',label='wthtv(res)',ls='--')
     ax[1].plot(wthtv_t/norm_wthtv,Z/zi,c='k',label='wthtv(total)')
     # obj contrib
-    wthtv_up1, wthtv_ss1, wthtv_up2, wthtv_ss2, wthtv_down = compute_flx_contrib(wthtv_t,[is_up1,is_ss1,is_up2,is_ss2,is_down],function_avg)
+    wthtv_up1, wthtv_ss1, wthtv_up2, wthtv_ss2, wthtv_down = compute_flx_contrib(wthtv,[is_up1,is_ss1,is_up2,is_ss2,is_down],function_avg)
     somme = wthtv_up1+wthtv_ss1+wthtv_up2+wthtv_ss2+wthtv_down
-    part_up1 = mean_vertical_contrib(wthtv_up1,uw_t,indzmax).values
-    part_up2 = mean_vertical_contrib(wthtv_up2,uw_t,indzmax).values
-    part_sub1 = mean_vertical_contrib(wthtv_ss1,uw_t,indzmax).values
-    part_sub2 = mean_vertical_contrib(wthtv_ss2,uw_t,indzmax).values
-    part_down = mean_vertical_contrib(wthtv_down,uw_t,indzmax).values
-    obj_over_all = mean_vertical_contrib(somme,uw_t,indzmax).values
+    part_up1 = mean_vertical_contrib(wthtv_up1,wthtv_r,indzmax).values
+    part_up2 = mean_vertical_contrib(wthtv_up2,wthtv_r,indzmax).values
+    part_sub1 = mean_vertical_contrib(wthtv_ss1,wthtv_r,indzmax).values
+    part_sub2 = mean_vertical_contrib(wthtv_ss2,wthtv_r,indzmax).values
+    part_down = mean_vertical_contrib(wthtv_down,wthtv_r,indzmax).values
+    obj_over_all = mean_vertical_contrib(somme,wthtv_r,indzmax).values
     ax[1].plot(wthtv_up1/norm_wthtv,Z/zi,c=Lcolors['up1'],label='up1 ('+str(np.round(part_up1*100,1))+'%)')
     ax[1].plot(wthtv_ss1/norm_wthtv,Z/zi,c=Lcolors['ss1'],label='ss1 ('+str(np.round(part_sub1*100,1))+'%)')
     ax[1].plot(wthtv_up2/norm_wthtv,Z/zi,c=Lcolors['up2'],label='up2 ('+str(np.round(part_up2*100,1))+'%)')
@@ -358,7 +359,7 @@ def Plot_mean_flux_allboxes(dsCS,dsmean,dsflx,path_save,function_avg=lambda a : 
         ax[k].set_xlabel(r"<u'w'>/u$^{*2}$")
         ax[k].grid()
         ax[k].set_ylim(YLIM)
-        ax2[k].set_xlim([-0.4,1.1])
+        ax2[k].set_xlim([-0.6,1.1])
         ax[k].xaxis.set_major_locator(ticker.MultipleLocator(0.5))
         ax[k].yaxis.set_major_locator(ticker.MultipleLocator(0.2))
         ax[k].set_title('Boxe '+str(dsCS.nboxe[k].values))

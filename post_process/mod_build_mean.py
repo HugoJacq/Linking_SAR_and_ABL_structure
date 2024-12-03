@@ -22,7 +22,7 @@ def Reynolds_avg(array):
         DIMS =['time','ni','nj']
     return array.mean(dim=DIMS)
 
-def mass_interpolator(dsO):
+def mass_interpolatorOld(dsO):
     """
     This operator is interpolating variables at mass point from a C-grid used in MesoNH
 
@@ -58,6 +58,52 @@ def mass_interpolator(dsO):
     ds = ds.drop_dims(['level_w','ni_u','nj_u','ni_v','nj_v'])
 
     return ds.unify_chunks() # this is needed otherwise chunked are messed up
+
+def mass_interpolator(dsO,chunks):
+	"""
+	This operator is interpolating variables at mass point from a C-grid used in MesoNH
+
+	INPUT : 
+		- ds is a xarray dataset, typically a OUTPUT or BACKUP file from MesoNH simulation
+	OUTPUT
+		- a xarray dataset with interpolated variables
+
+	Note :
+		See end of MesoNH user doc for a schematic of the code grid
+		Grid X -> Grid 1
+
+	"""
+	ds = dsO
+
+	X = ds.ni
+	Y = ds.nj
+	Z = ds.level
+	ds['UT'] = dsO.UT.interp(ni_u=X)				            # Grid : 2
+	ds['VT'] = dsO.VT.interp({'nj_v':Y})				            # Grid : 3
+	ds['WT'] = dsO.WT.interp({'level_w':Z})				        # Grid : 4
+	ds['UW_HFLX'] = dsO.UW_HFLX.interp({'level_w':Z,'ni_u':X}) 	# Grid : 6
+	ds['UW_VFLX'] = dsO.UW_VFLX.interp({'level_w':Z})				    # Grid : 4
+	ds['VW_HFLX'] = dsO.VW_HFLX.interp({'level_w':Z,'nj_v':Y}) 	# Grid : 7
+	ds['VW_VFLX'] = dsO.VW_VFLX.interp({'level_w':Z})				    # Grid : 4
+	ds['THW_FLX'] = dsO.THW_FLX.interp({'level_w':Z})					# Grid : 4
+	ds['RCONSW_FLX'] = dsO.RCONSW_FLX.interp({'level_w':Z})			    # Grid : 4
+	ds['UV_FLX'] = dsO.UV_FLX.interp({'ni_u':X,'nj_v':Y})             # Grid : 5
+	# no need to interp on the following dimensions, 
+	#  they have a different name but are the same as mass point values
+	ds['UT'] = ds.UT.rename(new_name_or_name_dict={'nj_u':'nj'})
+	ds['VT'] = ds.VT.rename(new_name_or_name_dict={'ni_v':'ni'})
+	ds['UW_HFLX'] = ds.UW_HFLX.rename(new_name_or_name_dict={'nj_u':'nj'})
+	ds['VW_HFLX'] = ds.VW_HFLX.rename(new_name_or_name_dict={'ni_v':'ni'})
+
+	
+	ds = ds.isel(ni=slice(nhalo,-nhalo),nj=slice(nhalo,-nhalo),level=slice(nhalo,-nhalo))
+	ds = ds.drop_dims(['level_w','ni_u','nj_u','ni_v','nj_v']) # dropping dimensions not needed anymore
+	ds = ds.chunk(chunks)
+	# we need to rechunk as the interpolation step changed them.
+	# another option would be to call .unify_chunks() but then there is a risk that it would messed up other computations
+	#		down the line
+	return ds 
+
 
 def build_mean(dsO,function_avg=lambda a : a.mean(dim=['ni','nj'])):
     """

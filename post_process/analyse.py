@@ -33,48 +33,55 @@ run with : python analayse.py
 
 """
 start = time.time()
+# =======================================================================================================
+# INPUT ZONE                                                                                            |
+# =======================================================================================================
 
-# INPUT ZONE ============================================================================================
-#
-CASE = '1' # 1 is ERA5-like conditions
-SAR_SIZE = 'small' # amount of vignette. 'all' or 'small' or 'small_only' or 'minimal'
+# Selector of simulation (as in the namlist injector setup_big.py)
+#   - 0 is less convective, weaker inversion than ERA5
+#   - 1 is ERA5-like conditions
+CASE = '1'         
+ 
+# Amount of vignette. 'all' or 'small' or 'small_only' or 'minimal'
+#   'all' is looking for a maximum of vignette on the full swath.
+#   'small' is looking for a maximum of vignette but on the equivalent LES domain (~50 boxes) 
+#       AND it also takes into account what asked the user (in 'd_boxes') 
+#   'small_only' is same as above, without the user boxes
+#   'minimal' is only the boxes asked by the user in 'd_boxes'
+SAR_SIZE = 'small' 
+
 # First look -----------------------------------------------------------
-PLOT_10m_WIND = True # 10m wind and SAR roughness for first 3 boxes
-WHERE_ARE_THE_BOXES = True # both SAR and LES
+PLOT_10m_WIND = False # 10m wind and SAR roughness for first 3 boxes
+WHERE_ARE_THE_BOXES = False # both SAR and LES
 # Geometrical analysis -------------------------------------------------
 PLOT_2D_COVARIANCE = False 
 PLOT_2D_SKEWNESS = False
-S2_ANALYSIS = False
+S2_ANALYSIS = False # this tries to fit ellipse on the 2nd order structure function (Brilouet et al. 2024)
 # Turbulence convergence -----------------------------------------------
 VERIFY_TURB_CONVERGENCE = False # plot spectrum at inflow
 B_KPSD = True                   # plot k*PSD(k) ?
-altZ_convergence = 200          # m 
+altZ_convergence = 200          # in meters 
 liste_X_turb_convergence = [0,2,4,6,8,10] # km, distance from East border of son domain
-A = 0.1           # y=log(x)**(-coeff)+log(A) for Kolmogorov Law in inertial subrange
-Kcoeff = -5/3
+A = 0.1              # y=log(x)**(-coeff)+log(A), constant for Kolmogorov Law in inertial subrange
+Kcoeff = -5/3        # inertial subrange
 # Coeherent structure analysis -----------------------------------------
-PLOT_MEAN_PROGVAR = False
-PLOT_MEAN_FLX = False
-PLOT_TopView_with_CS = False
-VAR_TOPVIEW = 'W'
+PLOT_MEAN_PROGVAR = False       # mean profile in each structures
+PLOT_MEAN_FLX = True            # mean flux profile with contribution from each structures
+PLOT_TopView_with_CS = False    # top view with coherent srtuctures
+VAR_TOPVIEW = 'W'               # background of the top view
 
 # folder organisation --------------------------------------------------
 workdir_path = '/home/jacqhugo/WORKDIR/MNH570/'
 path_here = '/home/jacqhugo/scripts/Linking_SAR_and_ABL_structure/post_process/'
 #path_SAR = path_here+'SAR_from_OVL/SAR_roughness_20151210t170827-20151210t170921.nc'
 path_SAR = path_here+'SAR_from_IFREMER/S1A_IW_GRDH_1SDV_20151210T170827_20151210T170856_008982_00CDEF_9AE1.nc'
-path_SST_ODYSEA = path_here+'SST_from_Ifremer/20151210-IFR-L4_GHRSST-SSTfnd-ODYSSEA-SAF_002-v2.0-fv1.0.nc'
-path_data_turb = path_here + 'DATA_TURB/'
-path_save_turb_convergence = 'PNGs_turb_convergence/'
-path_save_First_look = 'PNGs_First_look/'
-path_save_geometric = 'PNGs_geometric/'
-path_save_CS = 'PNGs_CS_analysis/'
-# creating folders
-os.system('mkdir -p '+path_data_turb)
-os.system('mkdir -p '+path_save_turb_convergence)
-os.system('mkdir -p '+path_save_First_look)
-os.system('mkdir -p '+path_save_geometric)
-os.system('mkdir -p '+path_save_CS)
+path_SST_ODYSEA = path_here + 'SST_from_Ifremer/20151210-IFR-L4_GHRSST-SSTfnd-ODYSSEA-SAF_002-v2.0-fv1.0.nc'
+path_data_turb = path_here + 'DATA_TURB/CASE_'+CASE
+path_save_turb_convergence = 'CASE_'+CASE+'/PNGs_turb_convergence/'
+path_save_First_look = 'CASE_'+CASE+'/PNGs_First_look/'
+path_save_geometric = 'CASE_'+CASE+'/PNGs_geometric/'
+path_save_CS = 'CASE_'+CASE+'/PNGs_CS_analysis/'
+
 
 sim_dir = {'0':{'backup_name':'', # test folder
                 'out_name':[workdir_path+'simu_nest_Agulhas_0/06_mesonh_2models/FICHIERS_OUT/SON_600s_OUT_scale_offset_7.nc',
@@ -133,6 +140,10 @@ chunksOUT = {'time':-1,
             'ni':NIchunks,
             'ni_u':NIchunks,
             'ni_v':NIchunks}	
+chunksNOHALO_interp = {'time':-1,
+                    'level':16,
+                    'nj':200,
+                    'ni':130}
 # print( give_NETCDF4_chunking(temp_path) ) # = [1, 17, 201, 129]
 #   if chunksOUT is different from what is saved in the netcdf4, 
 #   a warning about performance is raised.
@@ -141,6 +152,13 @@ chunksOUT = {'time':-1,
 
 if __name__ == "__main__":  # This avoids infinite subprocess creation
     
+    # creating folders
+    os.system('mkdir -p '+path_data_turb)
+    os.system('mkdir -p '+path_save_turb_convergence)
+    os.system('mkdir -p '+path_save_First_look)
+    os.system('mkdir -p '+path_save_geometric)
+    os.system('mkdir -p '+path_save_CS)
+
     # DASK related ------------------------------------------------
    
     global client
@@ -155,15 +173,15 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         print("Dashboard at :",client.dashboard_link)
     
     
+    # =======================================================================================================
+    # BUILDING FILES                                                                                        |
+    # =======================================================================================================
 
-    # BUILDING FILES ----------------------------------------------
     # opening OUTPUT files
     # dsB = 
     dsO = xr.open_mfdataset(dsO_path,chunks=chunksOUT) 
-    dsO_i = mass_interpolator(dsO)
-    dsO_i = dsO_i.isel(level=slice(nhalo,-nhalo),
-                           ni=slice(nhalo,-nhalo),
-                           nj=slice(nhalo,-nhalo))
+    dsO_i = mass_interpolator(dsO,chunksNOHALO_interp)
+    #dsO_i = dsO_i.isel(level=slice(nhalo,-nhalo),ni=slice(nhalo,-nhalo),nj=slice(nhalo,-nhalo))
     
     # ** MEAN FILE 
     #   -> mean profiles of prognostic variables
@@ -195,6 +213,7 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     d_boxes['SAR'] = SAR_boxes_generator(dsSAR,d_boxes['SAR'],SAR_SIZE)
 
     # Building structure functions
+    #   this process is long. Much longer if you have many boxes and big domains
     N = 2
     save_S_n_SAR(dsSAR,2,d_boxes['SAR'],path_data_turb)
     dsS2_SAR = xr.open_dataset(path_data_turb+'S_2_sig0.nc')
@@ -206,16 +225,16 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     # save_S_n_LES(dsCS,'M',10,3,path_data_turb)
     # dsS2_LES_M10 = xr.open_dataset(path_data_turb+'S_3_M10.nc')
 
-    ###----------###
-    # POST-PROCESS #
-    ###----------###
+    # =======================================================================================================
+    # POST-PROCESS                                                                                          |
+    # =======================================================================================================
 
     # TURB_STATS
     if VERIFY_TURB_CONVERGENCE:
         print('* Verification of turbulence at inflow')
         plot_energy_spectrum(dsO,altZ_convergence,liste_X_turb_convergence,B_KPSD,A,Kcoeff,path_save_turb_convergence)
         
-    # FIRST LOOK
+    # FIRST LOOK --------------------
     if PLOT_10m_WIND:
         print('* 10m wind')
         Wind_10m_in_boxes_vs_SAR(dsCS,dsSAR,indt=-1,d_boxes=d_boxes,path_save=path_save_First_look)
@@ -223,7 +242,7 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         print('* Plotting location of boxes on LES and SAR')
         Where_boxes(dsO_i,dsSAR,dsSST,indt=-1,d_boxes=d_boxes,SAR_SIZE=SAR_SIZE,path_save=path_save_First_look)
 
-    # GEOMETRICS
+    # GEOMETRICS --------------------
     if PLOT_2D_COVARIANCE:
         print('* Plotting 2D covariance')
         N = 2
@@ -241,6 +260,10 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         path_out = 'DATA_TURB/'
         S2_analysis('SAR',dsS2_SAR,d_boxes,path_out)
         S2_analysis('LES',dsS2_LES_M10,d_boxes,path_out)
+         # To be done:
+         #   - plot the fitted ellipse on S2 for LES and SAR
+   
+
 
 
     # comparer échelles caractéristiques SAR vs LES.
@@ -253,10 +276,7 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     # ajuster colorbar des fonctions de structure
     # paralléliser le calcul de fonction de structure
 
-    # Régler problème de résolution du SAR
-    #   check conversion deg vs km -> ok 
-    #   récupérer dataset depuis copernicus puis ouverture avec le package S1 xarray -> non trop long
-    #   récupérer données Alexis Mouche ou PE Brilouet ? -> j'ai, à voir les diff avec les données OVL
+   
 
     # Régler problème de profiles de flux qui ne sont pas bien calculés.
 
@@ -292,14 +312,14 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     # ax.set_title('objects at Z = '+str(altZ)+'m')
     # ax.set_aspect(1)
 
-    # COHERENT STRUCTURE ANALYSIS
+    # COHERENT STRUCTURE ANALYSIS ---
     if PLOT_MEAN_PROGVAR:
         print('* Plotting profiles of prognostic variables, with object decomposition')
-        #Plot_mean_progvar_allboxes(dsCS,dsmean,path_save_CS,Reynolds_avg)
+        Plot_mean_progvar_allboxes(dsCS,dsmean,path_save_CS,Reynolds_avg)
         
     if PLOT_MEAN_FLX:
         print('* Plotting profiles of fluxes, with object decomposition')
-        #Plot_mean_flux_allboxes(dsCS,dsmean,dsflx,path_save_CS,Reynolds_avg)
+        Plot_mean_flux_allboxes(dsCS,dsmean,dsflx,path_save_CS,Reynolds_avg)
     
     if PLOT_TopView_with_CS:
         print('* Plotting top view of '+VAR_TOPVIEW+' with coherent structures')
@@ -318,3 +338,10 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     # avoid memory leaks
     dsO.close()
     #dsB.close()
+
+    # Old
+
+    # Régler problème de résolution du SAR -> done
+    #   check conversion deg vs km -> ok 
+    #   récupérer dataset depuis copernicus puis ouverture avec le package S1 xarray -> non trop long
+    #   récupérer données Alexis Mouche ou PE Brilouet ? -> j'ai, à voir les diff avec les données OVL: oui c'est ok
