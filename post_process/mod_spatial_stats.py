@@ -783,7 +783,7 @@ def compute_integral_scale_at_tht(variance,S2_polar,r,atTheta,resolution):
         DATA_TO_FIT[1] = integral_scale*np.sin(-atTheta)
     return integral_scale,DATA_TO_FIT
 
-def S2_analysis(source,dsS2,d_boxes,path_out):
+def S2_analysis(source,namevar,dsS2,d_boxes,path_out):
     """
     This function uses diagnostics from [1] to analyse the 2nd order structure function and fit an ellipse on S2.
 
@@ -795,6 +795,7 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
 
     INPUT:
         - source : string that specifie the source ('LES' or 'SAR')
+        - namevar : name of the variable
         - S2_polar : xarray dataset of 2nd order structure function in cartesian coordinates (lx,ly)
         - d_boxes : dict with boxe location and width and height
         - path_out : where to save the texte file
@@ -923,7 +924,7 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
     # print('DELTA_AUTOCORR')
     # print(DELTA_AUTOCORR)
 
-    file_a_moi = source+'_clear_sky_parameters.txt' 
+    file_a_moi = source+'_'+namevar+'_clear_sky_parameters.txt' 
     fullname = path_out + file_a_moi
     file_final = open (fullname, 'w') 
     file_final.write(
@@ -931,22 +932,35 @@ def S2_analysis(source,dsS2,d_boxes,path_out):
     '# C00: num of boxe \n' \
     '# C01: longitude of left,bottom corner \n' \
     '# C02: lattitude of left,bottom corner \n' \
-    '# C05: roll direction (degree from North) as min cumul S2  \n'\
-    '# C06: 2x min of integral length scale (m)  \n'\
-    '# C07: 2x max of integral length scale (m)  \n'\
-    '# C08: radius of the major axe (m) \n'\
-    '# C09: radius of the minor axe (m) \n'\
-    '# C10: ellipse flatness (major-minor)/major   \n'\
-    '# C11: Angle between the North and the major axis of the ellipse (degree from North)  \n'\
-    '# C12: diff 2nd max R(r) - min R(r) for L_OS calculation  \n'\
-    '# C13: Length organized structure L_OS (m)   \n'\
+    '# C03: roll direction (degree from North) as min cumul S2  \n'\
+    '# C04: 2x min of integral length scale (m)  \n'\
+    '# C05: 2x max of integral length scale (m)  \n'\
+    '# C06: radius of the major axe (m) \n'\
+    '# C07: radius of the minor axe (m) \n'\
+    '# C08: ellipse flatness (major-minor)/major   \n'\
+    '# C09: Angle between the North and the major axis of the ellipse (degree from North)  \n'\
+    '# C10: diff 2nd max R(r) - min R(r) for L_OS calculation  \n'\
+    '# C11: Length organized structure L_OS (m)   \n'\
     '#-------------------------------------------------------------- \n')
     print(d_boxes['boxes'])
     for index in range(Nboxe):
         file_final.write('%.0f\t %.3f\t %.3f\t %.0f\t %.0f\t %.0f\t %.0f\t %.0f\t %.2f\t %.1f\t %.2f\t %.0f\t\n' %
-                        (index+1,d_boxes['boxes'][str(index+1)]['O'][0],d_boxes['boxes'][str(index+1)]['O'][1],DIR_ROLL_FROM_NORTH[index],L_E_MIN[index],L_E_MAX[index],
-                        BIG_RAD_ELLIPSE[index],SMALL_RAD_ELLIPSE[index],FLATNESS_ELLIPSE[index],DIR_ELLIPSE_FROM_NORTH[index],DELTA_AUTOCORR[index],
+                        (index+1,
+                        d_boxes['boxes'][str(index+1)]['O'][0],
+                        d_boxes['boxes'][str(index+1)]['O'][1],
+                        DIR_ROLL_FROM_NORTH[index],
+                        L_E_MIN[index],
+                        L_E_MAX[index],
+                        BIG_RAD_ELLIPSE[index],
+                        SMALL_RAD_ELLIPSE[index],
+                        FLATNESS_ELLIPSE[index],
+                        DIR_ELLIPSE_FROM_NORTH[index],
+                        DELTA_AUTOCORR[index],
                         L_OS[index]))
+
+
+
+
 
     #--- 
     file_final.close() 

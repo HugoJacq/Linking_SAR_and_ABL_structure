@@ -399,3 +399,49 @@ def Plot_top_view_var(dsCS,VAR,atZ,path_save):
     
     
     #fig, ax = plt.subplots(1,Nboxe,figsize = figsize,constrained_layout=True,dpi=dpi)
+
+
+# METHOD 1:
+# fit une ellipse pour chaque structure (updrafts ?)
+
+# à une altitude donnée
+# pour chaque structure coherente 
+#       possible que downdrafts ca marche pas super
+#       attention près de la surface
+
+def find_objects():
+     """
+     """
+     # scipy.ndimage.label(input, structure=None, output=None)
+
+
+def find_center_of_mass():
+     """
+     """
+    # scipy.ndimage.center_of_mass(input, labels=None, index=None)
+    # chercher le barycentre pour tous les index.
+
+def reduce_to_labeled_object():
+    """
+    """
+    # remove the rest of the array, keep only the labeled zone, with a 1 halo of zeros
+
+def step_fit_ellipse():
+    """
+    """
+    # fit ellipse on the smaller array
+
+
+
+# METHOD 2:
+# Req = A / Npixels
+
+def equivalent_radius_object():
+    """
+    This function computes the area of the mask for one object, then divide by the surface of 1 pixel to get an equivalent radius
+    """
+
+def R_equivalent_for_all_objects():
+    """
+    This function computes a equivalent radius for each coherent structure
+    """

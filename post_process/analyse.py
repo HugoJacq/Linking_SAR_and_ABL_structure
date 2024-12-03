@@ -57,6 +57,7 @@ WHERE_ARE_THE_BOXES = False # both SAR and LES
 PLOT_2D_COVARIANCE = False 
 PLOT_2D_SKEWNESS = False
 S2_ANALYSIS = False # this tries to fit ellipse on the 2nd order structure function (Brilouet et al. 2024)
+# PLOT_ELLIPSE ?
 # Turbulence convergence -----------------------------------------------
 VERIFY_TURB_CONVERGENCE = False # plot spectrum at inflow
 B_KPSD = True                   # plot k*PSD(k) ?
@@ -66,9 +67,10 @@ A = 0.1              # y=log(x)**(-coeff)+log(A), constant for Kolmogorov Law in
 Kcoeff = -5/3        # inertial subrange
 # Coeherent structure analysis -----------------------------------------
 PLOT_MEAN_PROGVAR = False       # mean profile in each structures
-PLOT_MEAN_FLX = True            # mean flux profile with contribution from each structures
+PLOT_MEAN_FLX = False            # mean flux profile with contribution from each structures
 PLOT_TopView_with_CS = False    # top view with coherent srtuctures
-VAR_TOPVIEW = 'W'               # background of the top view
+CS_LENGTH_WITH_LABEL = False
+CS_R_EQUIVALENT = True
 
 # folder organisation --------------------------------------------------
 workdir_path = '/home/jacqhugo/WORKDIR/MNH570/'
@@ -258,17 +260,11 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         # compute_integral_scale_at_tht is ok      
         # test S2_analysis ?
         path_out = 'DATA_TURB/'
-        S2_analysis('SAR',dsS2_SAR,d_boxes,path_out)
-        S2_analysis('LES',dsS2_LES_M10,d_boxes,path_out)
-         # To be done:
-         #   - plot the fitted ellipse on S2 for LES and SAR
+        S2_analysis('SAR','sigma0_detrend',dsS2_SAR,d_boxes,path_out)
+        S2_analysis('LES','M10',dsS2_LES_M10,d_boxes,path_out)
+    # To be done:
+    #   - plot the fitted ellipse on S2 for LES and SAR
    
-
-
-
- 
-
-
     # COHERENT STRUCTURE ANALYSIS ---
     if PLOT_MEAN_PROGVAR:
         print('* Plotting profiles of prognostic variables, with object decomposition')
@@ -279,16 +275,22 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         Plot_mean_flux_allboxes(dsCS,dsmean,dsflx,path_save_CS,Reynolds_avg)
     
     if PLOT_TopView_with_CS:
+        VAR_TOPVIEW = 'W'               # background of the top view
         print('* Plotting top view of '+VAR_TOPVIEW+' with coherent structures')
         Plot_top_view_var(dsCS,atZ=250,path_save=path_save_CS) # this is not finished
 
-    
+    if CS_LENGTH_WITH_LABEL:
+        print('* Find characteristic length scale of coherent structures')
+
+    if CS_R_EQUIVALENT:
+        print('* Computes an equivalent radius for each coherent structure, for each boxes of the LES.')
+        # 1 profile or r_eq for each boxe and for each structure.
 
     end = time.time()
     print('Total runtime of analyse.py :'+sec2hms(end - start))
     plt.show()
-    # avoid memory leaks
-    dsO.close()
+    
+    dsO.close() # avoid memory leaks
     #dsB.close()
 
     # GOALS -----------
