@@ -237,7 +237,7 @@ def get_global_mask(dsIN,mask_condition_2):
 
     return global_mask
 
-def build_CS(path_in,path_out,nhalo,dsO_i,dsmean,d_boxes,gamma=0.005,mCS=1.0):
+def build_CS(path_in,path_out,dsO_i,dsmean,d_boxes,gamma=0.005,mCS=1.0):
     """
     This function builds a netcdf file with coherent structures identified.
 

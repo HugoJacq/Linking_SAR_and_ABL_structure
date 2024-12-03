@@ -199,7 +199,7 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     path_out = path_data_turb+'Cond_sampling_'+CASE+'.nc' 
     gamma = 0.005
     mCS = 1.0
-    build_CS(path_origin,path_out,nhalo,dsO_i,dsmean,d_boxes['LES'],gamma=gamma,mCS=mCS)
+    build_CS(path_origin,path_out,dsO_i,dsmean,d_boxes['LES'],gamma=gamma,mCS=mCS)
     dsCS = xr.open_dataset(path_out)
 
 
@@ -266,51 +266,8 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
 
 
 
-    # comparer échelles caractéristiques SAR vs LES.
-    # > SAR
-    #       utiliser code PE Brilouet pour avoir une estimation de l'ellipse comme dans son papier.
-    #       utiliser fonction de structure en polaire pour récupérer un R.
-    #         
-    # > LES
-    #       récupérer distribution de la taille des updrafts en fonction de l'altitude( 2 méthodes, ellipse ou rayon eq.)
-    # ajuster colorbar des fonctions de structure
-    # paralléliser le calcul de fonction de structure
+ 
 
-   
-
-    # Régler problème de profiles de flux qui ne sont pas bien calculés.
-
-    # altZ = 100
-    # is_up1 = xr.where( dsCS.isel(nboxe=0).global_mask==1,1,0 )
-    # is_ss1 = xr.where( dsCS.isel(nboxe=0).global_mask==2,1,0 )
-    # is_up2 = xr.where( dsCS.isel(nboxe=0).global_mask==3,1,0 )
-    # is_ss2 = xr.where( dsCS.isel(nboxe=0).global_mask==4,1,0 )
-    # is_down = xr.where( dsCS.isel(nboxe=0).global_mask==5,1,0 )
-
-    # B = is_up2.sel(level=altZ,method='nearest').isel(time=-1)
-
-    # print(B.shape)
-    # print(B.sum().values,
-    #       400*400,
-    #       B.sum().values  / (400*400),
-    #     B.mean().values)
-
-    # Lcolors = {'up1':'r',
-    #         'ss1':'purple',
-    #         'up2':'orange',
-    #         'ss2':'pink',
-    #         'down':'green'}
-    
-    # A = dsCS.isel(nboxe=0,time=-1).sel(level=altZ,method='nearest').global_mask
-
-    # fig, ax = plt.subplots(1,1,figsize = (7,5),constrained_layout=True,dpi=200)
-    # s = ax.pcolormesh(dsCS.X.isel(nboxe=0)/1000,dsCS.Y.isel(nboxe=0)/1000,
-    #                A,cmap='jet')
-    # plt.colorbar(s,ax=ax,label='objects')
-    # ax.set_xlabel('X')
-    # ax.set_ylabel('Y')
-    # ax.set_title('objects at Z = '+str(altZ)+'m')
-    # ax.set_aspect(1)
 
     # COHERENT STRUCTURE ANALYSIS ---
     if PLOT_MEAN_PROGVAR:
@@ -325,12 +282,7 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         print('* Plotting top view of '+VAR_TOPVIEW+' with coherent structures')
         Plot_top_view_var(dsCS,atZ=250,path_save=path_save_CS) # this is not finished
 
-    # - Compute L Obukhov for both LES and SAR
-    # LES : use L_Obukhov(tht0,u_star,surf_wtht_flx) from module_tool
-    # SAR : from O'Driscoll paper (10.1029/2023GL104228)
-
-    # - Compute geometric statistics for both LES and SAR
-    # L and K statistics
+    
 
     end = time.time()
     print('Total runtime of analyse.py :'+sec2hms(end - start))
@@ -339,8 +291,27 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     dsO.close()
     #dsB.close()
 
-    # Old
+    # GOALS -----------
+    # comparer échelles caractéristiques SAR vs LES.
+    # > SAR
+    #       utiliser code PE Brilouet pour avoir une estimation de l'ellipse comme dans son papier.
+    #       utiliser fonction de structure en polaire pour récupérer un R.
+    #         
+    # > LES
+    #       récupérer distribution de la taille des updrafts en fonction de l'altitude( 2 méthodes, ellipse ou rayon eq.)
+    # ajuster colorbar des fonctions de structure
+    # paralléliser le calcul de fonction de structure
 
+    # - Compute L Obukhov for both LES and SAR
+    # LES : use L_Obukhov(tht0,u_star,surf_wtht_flx) from module_tool
+    # SAR : from O'Driscoll paper (10.1029/2023GL104228)
+
+    # - Compute geometric statistics for both LES and SAR
+    # L and K statistics
+    # -----------------
+
+
+    # Old but to be reminded ?
     # Régler problème de résolution du SAR -> done
     #   check conversion deg vs km -> ok 
     #   récupérer dataset depuis copernicus puis ouverture avec le package S1 xarray -> non trop long

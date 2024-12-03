@@ -619,7 +619,7 @@ def save_S_n_SAR_OVL(dsSAR,N,d_boxes,path_save):
 
 def save_S_n_LES(dsCS,VAR,atZ,N,path_save):
     """
-    This function saves the values of the Nth stucture function for SAR data.
+    This function saves the values of the Nth stucture function for LES data.
     this is done for each boxe from 'd_boxes'
 
     INPUT:
