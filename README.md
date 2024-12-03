@@ -124,8 +124,8 @@ Here i provide informations about the custom files needed to plot figures. I use
 #### Before plotting, building
 - `build_mean_file` in `mod_build_mean.py`: This function builds mean profiles. By default, average is over the full domain in time,X and Y. Available variables are MNH prognostic variables, and surface flux. 
 - `build_CS` in `mod_build_CS.py`: This function builds a netcdf file with coherent structures identified.
-- `save_S_n_SAR` in `mod_spatial_stats.py`:
-- `save_S_n_LES` in `mod_spatial_stats.py`:
+- `save_S_n_SAR` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for SAR data. This is done for each boxe from 'd_boxes'
+- `save_S_n_LES` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for LES data. This is done for each boxe from 'd_boxes'
 
 Here i provide more details for each switches:
 
@@ -134,18 +134,18 @@ Here i provide more details for each switches:
 - `WHERE_ARE_THE_BOXES`: For each boxes, plot 10 m modulus of wind in the local coordinates. For both LES and SAR. For the SAR, only the first few boxes are plotted.
 
 #### Statistics on the textures
-- `PLOT_2D_COVARIANCE`: 
-- `PLOT_2D_SKEWNESS`:
-- `S2_ANALYSIS`:
+- `PLOT_2D_COVARIANCE`: Plots 2nd order structure function for SAR and LES, in cartesian and polar coordinates.
+- `PLOT_2D_SKEWNESS`: This is to be done
+- `S2_ANALYSIS`:  This function uses diagnostics from Brilouet et al. 2024 (see in the function) to analyse the 2nd order structure function and fit an ellipse on S2. This output text files with the ellipses parameters for each boxes and for both SAR and LES.
 
 #### Turbulence convergence
-- `VERIFY_TURB_CONVERGENCE`:
-- `B_KPSD`:
+- `VERIFY_TURB_CONVERGENCE`: This function plots the energy spectrum at the East side of the son domain. This is to know  the distance at which the turbulence is at the scale of the Son domain.
+- `B_KPSD`: wether to plot k.PSD(k) or PSD(k), used with `VERIFY_TURB_CONVERGENCE`
 
 #### Coherent structure analysis
-- `PLOT_MEAN_PROGVAR`:
-- `PLOT_MEAN_FLX`:
-- `PLOT_TopView_with_CS`:
+- `PLOT_MEAN_PROGVAR`: This function plots the profiles of mean profiles with object decomposition for all boxes defined by `d_boxes`
+- `PLOT_MEAN_FLX`: This function plots the profiles of fluxes with object decomposition (only resolved part) for all boxes defined by `d_boxes`
+- `PLOT_TopView_with_CS`: Work in progress, plot a top view of a field, with contours of the coherent structures
 
 ### 2.3 Known bugs
 (open issue if there is a new one)
@@ -180,6 +180,8 @@ I split this section in two: technical needs are some improvment that I see that
 #### Technical needs
 
 - modify `Where_boxes` to allow selection of which SAR boxes are plotted
+- build the 3rd order structure function and plot it for LES and SAR boxes
+- finish `Plot_top_view_var`
 
 #### Scientific needs
 
