@@ -8,11 +8,41 @@ This repo gather the material needed for the study 'Linking_SAR_and_ABL_structur
 In this README, you will find a description of the files (and their origin), how to reproduce the simulations and how to use the post-process scripts
 
 This README is organised as follow:
+
 [0. File Tree](#0-file-tree)
+
 [1. How to run the simulations](#1-how-to-run-the-simulations)
 
+[2. How to use post-process scripts](#2-how-to-use-post-process-scripts)
+
+[3. Where to find SAR, SST, ERA5 data](#3-where-to-find-sar-sst-era5-data)
+
+[4. What remains to do ?](#4-what-remains-to-do-)
+
+[5. Contact](#5-contact)
 
 ## 0. File tree
+
+The folder `user_modification` contains the necessary piece of code the modify MesoNH v5.7.0. See [section 1](#1-how-to-run-the-simulations) for a description on how to use them.
+```
+user_modification/
+│    condsamp.f90
+│    modd_blankn.f90
+│    mode_io_write_nc4.f90
+│    mode_turb_hor_uw.f90
+│    mode_turb_ver_thermo_flux.f90
+│    default_desfmn.f90
+│    modd_condsamp.f90
+│    mode_turb_hor_dyn_corr.f90
+│    mode_turb_hor_vw.f90
+│    modn_condsamp.f90
+│    ini_modeln.f90
+│    mode_io_field_write.f90
+│    mode_turb_hor_uv.f90
+│    mode_turb_ver_dyn_flux.f90
+│    turb.f90
+```
+
 The folder `Namlists` is what you need to reproduce the simulations. The main file is `setup_big.py`, this is a python script that builds the MesoNH namlists. It is somewhat modular and you can for example easily change the initial conditions, numerical schemes and dimensions.
 ```
 Namlists/
@@ -79,6 +109,19 @@ If you need to modify something about the simulation (initial conditions, number
 
 ## 2. How to use post-process scripts
 
+### 2.1 Pre-process
+
+`where_is_my_energy.py`, `verif_turb.py` and `prepare_obs.py` are pre-process scripts. `prepare_obs.py` checks some caracteristics of the fields from ERA5, SAR and SST. `where_is_my_energy.py` and `verif_turb.py` are the validation scripts for the simulation. More specifically, `verif_turb.py` is checking that the grid nesting setup is working ok b computing spectra at different distance from the inflow boundary. `where_is_my_energy.py` measure the loss of kinetic energy at the change of resolution between the two domains.
+
+### 2.2 Post-process
+
+All `mod_*`  and `analyse.py` are post-process scripts. The main file is `analyse.py` and it calls functions that are in the `mod_*` files. You can ask for different plots via boolean switches: for example, setting `PLOT_10m_WIND` to `True` will plot the 10m modulus of wind in the LES and the sigma0_detrend from the SAR. Each function in the `mod_*` files are documented with a description of the function, a liste of inputs and what is the ouput.
+
+### 2.3 Known bugs
+(open issue if there is a new one)
+
+TBD
+
 ## 3. Where to find SAR, SST, ERA5 data
 
 The SAR data has been provided by Alexis Mouche from Ifremer, but you can extract it from the [OVL](https://ovl.oceandatalab.com/?date=2015-12-10T12:00:00&timespan=1d&extent=1608235.0302722_-5098655.4894003_4739095.7083972_-3530779.1654331&center=3173665.3693347_-4314717.3274167&zoom=7&products=3857_SAR_roughness!3857_ODYSSEA_REG_SST!3857_ODYSSEA_SST!3857_GlobCurrent_CMEMS_geostrophic_streamline!3857_AMSR_sea_ice_concentration!3857_GIBS_MODIS_Terra_CorrectedReflectance_TrueColor!3857_GIBS_MODIS_Aqua_CorrectedReflectance_TrueColor&opacity=80_100_100_60_100_49.498_100&stackLevel=100.02_50.03_30.02_120.07_40.03_50.25_50.22&filter=+A,+B,+IW,+EW,+SM,+WV,+VV,+HH&selection=1000000) tool. For this you will need to switch your browser to "phone" view (via F11) and then increase as much as you can the resolution. This is needed because the extraction feature of OVL is screen-resolution dependent. To extract data from OVL, click to the small gear icon on the top bar. This will bring the extraction tool. Then enter the desired LAT-LON coordinates to extract and process. This will give you a numpy array file and you will need to get back the X and Y dimensions with the number of points of the file and the coordinates you entered in the last step. After this, you will need to remove yourself the non valid values from the data. The file is 1.1Go.
@@ -86,3 +129,22 @@ The SAR data has been provided by Alexis Mouche from Ifremer, but you can extrac
 The SST data is also from Ifremer but it is also available on Copernicus website (SST L4 Ifremer GHRSST Odyssea): 20151210-IFR-L4_GHRSST-SSTfnd-ODYSSEA-SAF_002-v2.0-fv1.0.nc. The file is about 2.6Mo
 
 ERA5 data can be retrieved with `python ERA5_pressure_level_retrieve.py`: this will dowload a file with ERA5 variables on pressure levels. The file is about 26Mo.
+
+## 4. What remains to do ?
+This section has been written in December of 2024 by Hugo Jacquet.
+
+### 4.1 What are the scientific questions ?
+
+Please have a look at the latex file.
+
+### 4.2 What I have done
+
+TBD
+
+### 4.3 What I think needs to be done
+
+TBD
+
+## 5. Contact
+
+This work has been done with Fleur Couvreux (CNRM) and Alex Ayet (Gipsa-lab). You can contact me at hugo.jacquet.work[at]gmail.com
