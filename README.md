@@ -163,16 +163,23 @@ The SST data is also from Ifremer but it is also available on Copernicus website
 #### ERA5
 ERA5 data can be retrieved with `python ERA5_pressure_level_retrieve.py`: this will dowload a file with ERA5 variables on pressure levels. The file is about 26Mo.
 
-## 4. What remains to do ?
+## 4. What remains to be done ?
 This section has been written in December of 2024 by Hugo Jacquet.
 
 ### 4.1 What are the scientific questions ?
 
-Please have a look at the latex file.
+- What is the internal structure of the MABL above a realistic SST front and how
+is it influenced by environmental conditions ?
+- Can surface roughness retrieved from SAR satellite give information about the ver-
+tical structure of the MABL ?
 
 ### 4.2 What I have done
 
-TBD
+- a first simulation with ERA5-like atmospheric conditions, other need to be defined in the Namlist injector `setup_big.py`.
+- generator of boxe for boxe SAR and LES (+ mean variables, mean flux for each boxes in the LES).
+- a function that computes the Nth order structure function. I plotted results with N = 2.
+- the grid nesting setup is ok to have a turbulent inflow. A written conclusion is available in the latex file. This could be improved by doing the same analysis on a bigger domain to have more converged spectra.
+- 
 
 ### 4.3 What I think needs to be done
 
@@ -180,10 +187,22 @@ I split this section in two: technical needs are some improvment that I see that
 #### Technical needs
 
 - modify `Where_boxes` to allow selection of which SAR boxes are plotted
-- build the 3rd order structure function and plot it for LES and SAR boxes
+- run the function to build the 3rd order structure function and plot it for LES and SAR boxes
 - finish `Plot_top_view_var`
+- build a function that computes the equivalent radius for coherent structure at each altitude, for each object.
 
 #### Scientific needs
+
+- Vertify the results from the ellipse fitting function from Brilouet et al. 2023, I need to ask him test cases.
+- Compare characteristic length scales of texture (SAR) and coherent structure (LES, with the ellipse parameter and the equivalent radius methods). The altitude of the comparison in the LES needs to be defined.
+- Properly describe the case study: 10th of December 2015, near the Agulhas current. ERA5 data, SAR data, SST data.
+- Visualize coherent structure in the LES and a surface field (U ?) on the same plot (contours = objects, background = wind). This will help in linking surface structure with upper ABL state.
+- Look at the uw flux instead of the wind. Its like looking at the Reynolds stress.
+- Link zi/L and a Richardson number to each boxes.
+- For LES: find better boxes ? How what criteria ?
+- Link contribution of turbulent flux by each coherent structure with surface values.
+- Look at the temporal evolution of the LES: SAR is only a snapshot (this mean getting more frequent ouput, diskspace management).
+- Try structure function on other variables than the wind: passive tracer, moisture, temperature ? 
 
 ## 5. Contact
 
