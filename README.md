@@ -183,7 +183,8 @@ tical structure of the MABL ?
 
 ### 4.3 What I think needs to be done
 
-I split this section in two: technical needs are some improvment that I see that would be nice to have in the current state of the scripts; scientific needs are functionnalities that are not yet present but that would provide some part of the answer of the [scientific questions](#41-what-are-the-scientific-questions-).
+I split this section in two: technical needs are some improvement that I see that would be nice to have in the current state of the scripts; scientific needs are functionnalities that are not yet present but that would provide some part of the answer of the [scientific questions](#41-what-are-the-scientific-questions-).
+
 #### Technical needs
 
 - modify `Where_boxes` to allow selection of which SAR boxes are plotted
