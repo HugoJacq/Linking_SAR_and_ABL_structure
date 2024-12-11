@@ -17,7 +17,7 @@ This README is organised as follow:
 
 [3. Where to find SAR, SST, ERA5 data](#3-where-to-find-sar-sst-era5-data)
 
-[4. What remains to do ?](#4-what-remains-to-do-)
+[4. What remains to be done ?](#4-what-remains-to-be-done-)
 
 [5. Contact](#5-contact)
 
