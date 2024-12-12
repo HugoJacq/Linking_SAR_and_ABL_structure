@@ -517,11 +517,6 @@ def save_S_n_SAR(dsSAR,N,d_boxes,client,path_save):
         - a netcdf file with S_n,lx,ly
     """
     print(' * Building S_'+str(N)+' for SAR')
-    if client==None:
-        cluster = LocalCluster(n_workers=16) # n_workers=16
-        client = Client(cluster)
-    
-    print("     Dashboard at :",client.dashboard_link)
 
     nameA = 'sig0'
     name_out = path_save+'S_'+str(N)+'_'+nameA+'.nc'
@@ -535,6 +530,10 @@ def save_S_n_SAR(dsSAR,N,d_boxes,client,path_save):
         else:
             print('     - File is already here : '+name_out)
     else:
+        if client==None:
+            cluster = LocalCluster(n_workers=16) # n_workers=16
+            client = Client(cluster)
+        print("     Dashboard at :",client.dashboard_link)
 
         lon = dsSAR.longitude
         lat = dsSAR.latitude
@@ -651,11 +650,7 @@ def save_S_n_LES(dsCS,VAR,atZ,N,client,path_save):
     """
     print(' * Building S_'+str(N)+' for LES')
     print('     var is : '+VAR+' at z='+str(atZ)+'m')
-    if client==None:
-        cluster = LocalCluster(n_workers=16) # n_workers=16
-        client = Client(cluster)
     
-    print("     Dashboard at :",client.dashboard_link)
     
     indt = -1 
     nameA = VAR+str(atZ)
@@ -666,6 +661,11 @@ def save_S_n_LES(dsCS,VAR,atZ,N,client,path_save):
     if IS_HERE:
         print('     - File is already here : '+name_out)
     else:
+        if client==None:
+            cluster = LocalCluster(n_workers=16) # n_workers=16
+            client = Client(cluster)
+        print("     Dashboard at :",client.dashboard_link)
+
         Nboxe = len(dsCS.nboxe)
         Z = dsCS.level
         dsIN = dsCS.isel(time=indt)

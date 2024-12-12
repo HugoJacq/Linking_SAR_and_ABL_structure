@@ -1,5 +1,5 @@
 from module_tools import *
-
+from scipy.ndimage import label as SPlabel
 
 def mean_vertical_contrib(flx_i,flx_mean,indzi):
 	"""This function is computing the mean contribution of flx_i to the total
@@ -451,12 +451,11 @@ def equivalent_radius_object(mask,resolutionH):
     # here i will sum on dim that are not 'level'
     dims = mask.dims
     dimsum = [dim for dim in dims if dim!='level']
-    print(dimsum)
-    A = mask.sum(dimsum)
+    A = mask.sum(dimsum)*resolutionH**2
     R = np.sqrt(A/np.pi)
     return R
 
-def R_equivalent_for_all_objects(dsCS,resolutionH,path_save):
+def R_equivalent_for_all_objects(dsCS,dsmean,resolutionH,path_save):
     """
     This function computes a equivalent radius for each coherent structure, at every altitude.
 
@@ -467,30 +466,61 @@ def R_equivalent_for_all_objects(dsCS,resolutionH,path_save):
         - a plot of R(z) for each structures
 
     """
-
+    dsCS = dsCS.isel(time=-1) # this can be removed when time is taken into account
     global_mask = dsCS.global_mask
     Z = dsCS.level
     Nboxe = len(dsCS.nboxe)
 
-    is_up1 = xr.where( dsCS.global_mask==1,1,0 )
-    is_ss1 = xr.where( dsCS.global_mask==2,1,0 )
-    is_up2 = xr.where( dsCS.global_mask==3,1,0 )
-    is_ss2 = xr.where( dsCS.global_mask==4,1,0 )
-    is_down = xr.where( dsCS.global_mask==5,1,0 )
+    # is_up1 = xr.where( dsCS.global_mask==1,1,0 )
+    # is_ss1 = xr.where( dsCS.global_mask==2,1,0 )
+    # is_up2 = xr.where( dsCS.global_mask==3,1,0 )
+    # is_ss2 = xr.where( dsCS.global_mask==4,1,0 )
+    # is_down = xr.where( dsCS.global_mask==5,1,0 )
+    is_up1 = global_mask.where(global_mask==1,0)
+    is_ss1 = global_mask.where(global_mask==2,0)/2
+    is_up2 = global_mask.where(global_mask==3,0)/3
+    is_ss2 = global_mask.where(global_mask==4,0)/4
+    is_down = global_mask.where(global_mask==5,0)/5
     list_mask = [is_up1,is_ss1,is_up2,is_ss2,is_down]
     colors_obj = ['r','purple','orange','pink','g']
     labels_obj = ['up1','ss1','up2','ss2','down']
     Req = np.zeros((Nboxe,len(list_mask),len(Z)))
+    labels = xr.zeros_like(is_up1.isel(nboxe=0,level=0))
 
-    for k,boxe in enumerate(dsCS.nboxe):
-        for imask in range(len(list_mask)):
-            Req[k,imask,:] = equivalent_radius_object(list_mask[imask],resolutionH)
+    # unique object identification with scipy
+    for k,boxe in enumerate(dsCS.nboxe[:1]):
+        print('I work on boxe '+str(boxe.values))
+        for imask in range(len(list_mask)): #  1 len(list_mask)
+            print(' '+labels_obj[imask])
+            for iz in range(len(Z)): # len(Z) 5
+                labels.data, Nlabel = SPlabel(list_mask[imask].isel(nboxe=k,level=iz))
+                if iz==50:
+                    print('Z= ',Z[iz].values)
+                    fig, ax = plt.subplots(1,1,figsize = (3,3),constrained_layout=True,dpi=200)
+                    ax.pcolormesh(labels)
+                    plt.show()
+                for i in range(Nlabel):
+                    Req[k,imask,iz] += equivalent_radius_object(xr.where( labels==i,1,0),resolutionH)
+                if Nlabel>0:
+                    Req[k,imask,iz] = Req[k,imask,iz] / Nlabel    
+                else:
+                     Req[k,imask,iz] = 0
+                print('         Z = ',Z[iz].values,' at this level, '+str(Nlabel)+' obj, Req = ',Req[k,imask,iz])
+                
+
+    # for k,boxe in enumerate(dsCS.nboxe):
+    #     for imask in range(len(list_mask)):
+    #         Req[k,imask,:] = equivalent_radius_object(list_mask[imask][k],resolutionH)
 
     fig, ax = plt.subplots(1,Nboxe,figsize = (3*Nboxe,5),constrained_layout=True,dpi=200)
     for k,boxe in enumerate(dsCS.nboxe):
-        ax[k].plot(Req[k,:,:],Z,c=colors_obj,label=labels_obj)
-        ax[k].set_xlabel('Req (m)')
-        ax[k].set_title(boxe,location='right')
+        zi = get_ABLH(Z,dsmean.THTvm.isel(nboxe=k)) # Boundary layer height
+        for i,obj in enumerate(labels_obj):
+            ax[k].plot(Req[k,i,:],Z/zi,c=colors_obj[i],label=obj)
+            ax[k].set_xlabel('Req (m)')
+            ax[k].set_title('boxe '+str(boxe.values),loc='right')
+            ax[k].set_ylim([0,1.2])
+            #ax[k].set_xlim([0,100])
     ax[0].set_ylabel('Z (m)') 
     fig.savefig(path_save + 'Requivalent_Z_allobjects.png')
 

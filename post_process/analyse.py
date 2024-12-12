@@ -51,26 +51,26 @@ CASE = '1'
 SAR_SIZE = 'small' 
 
 # First look -----------------------------------------------------------
-PLOT_10m_WIND = False # 10m wind and SAR roughness for first 3 boxes
+PLOT_10m_WIND       = False # 10m wind and SAR roughness for first 3 boxes
 WHERE_ARE_THE_BOXES = False # both SAR and LES
 # Geometrical analysis -------------------------------------------------
-PLOT_2D_COVARIANCE = False 
-PLOT_2D_SKEWNESS = False
-S2_ANALYSIS = False # this tries to fit ellipse on the 2nd order structure function (Brilouet et al. 2024)
+PLOT_2D_COVARIANCE  = False 
+PLOT_2D_SKEWNESS    = False
+S2_ANALYSIS         = False # this tries to fit ellipse on the 2nd order structure function (Brilouet et al. 2024)
 # PLOT_ELLIPSE ?
 # Turbulence convergence -----------------------------------------------
 VERIFY_TURB_CONVERGENCE = False # plot spectrum at inflow
-B_KPSD = True                   # plot k*PSD(k) ?
-altZ_convergence = 200          # in meters 
+B_KPSD                  = True  # plot k*PSD(k) ?
+altZ_convergence        = 200   # in meters 
 liste_X_turb_convergence = [0,2,4,6,8,10] # km, distance from East border of son domain
-A = 0.1              # y=log(x)**(-coeff)+log(A), constant for Kolmogorov Law in inertial subrange
-Kcoeff = -5/3        # inertial subrange
+A                       = 0.1   # y=log(x)**(-coeff)+log(A), constant for Kolmogorov Law in inertial subrange
+Kcoeff                  = -5/3  # inertial subrange
 # Coeherent structure analysis -----------------------------------------
-PLOT_MEAN_PROGVAR = False       # mean profile in each structures
-PLOT_MEAN_FLX = False            # mean flux profile with contribution from each structures
-PLOT_TopView_with_CS = False    # top view with coherent srtuctures
-CS_LENGTH_WITH_LABEL = False
-CS_R_EQUIVALENT = True
+PLOT_MEAN_PROGVAR       = False # mean profile in each structures
+PLOT_MEAN_FLX           = False # mean flux profile with contribution from each structures
+PLOT_TopView_with_CS    = False # top view with coherent srtuctures
+CS_LENGTH_WITH_LABEL    = False
+CS_R_EQUIVALENT         = True  # Computes equivalent radius for each structures.
 
 # folder organisation --------------------------------------------------
 workdir_path = '/home/jacqhugo/WORKDIR/MNH570/'
@@ -220,7 +220,6 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     dsS2_SAR = xr.open_dataset(path_data_turb+'S_2_sig0.nc')
     save_S_n_LES(dsCS,'M',10,2,client,path_data_turb)
     dsS2_LES_M10 = xr.open_dataset(path_data_turb+'S_2_M10.nc')
-    raise Exception('i m done')
     # N = 3
     # save_S_n_SAR(dsSAR,3,d_boxes['SAR'],path_data_turb)
     # dsS2_SAR = xr.open_dataset(path_data_turb+'S_3_sig0.nc')
@@ -285,12 +284,12 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     if CS_R_EQUIVALENT:
         print('* Computes an equivalent radius for each coherent structure, for each boxes of the LES.')
         # 1 profile or r_eq for each boxe and for each structure.
-        R_equivalent_for_all_objects(dsCS,LES_res,path_save_CS)
+        R_equivalent_for_all_objects(dsCS,dsmean,LES_res,path_save_CS)
         
 
 
     end = time.time()
-    print('Total runtime of analyse.py :'+sec2hms(end - start))
+    print('Total runtime of analyse.py: '+sec2hms(end - start))
     plt.show()
     
     dsO.close() # avoid memory leaks
