@@ -124,8 +124,8 @@ Here i provide informations about the custom files needed to plot figures. I use
 #### Before plotting, building
 - `build_mean_file` in `mod_build_mean.py`: This function builds mean profiles. By default, average is over the full domain in time,X and Y. Available variables are MNH prognostic variables, and surface flux. 
 - `build_CS` in `mod_build_CS.py`: This function builds a netcdf file with coherent structures identified.
-- `save_S_n_SAR` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for SAR data. This is done for each boxe from 'd_boxes'
-- `save_S_n_LES` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for LES data. This is done for each boxe from 'd_boxes'
+- `save_S_n_SAR` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for SAR data. This is done for each boxe from 'd_boxes'. This is parallelized with dask.
+- `save_S_n_LES` in `mod_spatial_stats.py`: This function saves the values of the Nth stucture function for LES data. This is done for each boxe from 'd_boxes'. This is parallelized with dask.
 
 Here i provide more details for each switches:
 
