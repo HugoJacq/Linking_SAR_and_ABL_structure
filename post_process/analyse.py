@@ -78,7 +78,7 @@ path_here = '/home/jacqhugo/scripts/Linking_SAR_and_ABL_structure/post_process/'
 #path_SAR = path_here+'SAR_from_OVL/SAR_roughness_20151210t170827-20151210t170921.nc'
 path_SAR = path_here+'SAR_from_IFREMER/S1A_IW_GRDH_1SDV_20151210T170827_20151210T170856_008982_00CDEF_9AE1.nc'
 path_SST_ODYSEA = path_here + 'SST_from_Ifremer/20151210-IFR-L4_GHRSST-SSTfnd-ODYSSEA-SAF_002-v2.0-fv1.0.nc'
-path_data_turb = path_here + 'DATA_TURB/CASE_'+CASE
+path_data_turb = path_here + 'DATA_TURB/CASE_'+CASE+'/'
 path_save_turb_convergence = 'CASE_'+CASE+'/PNGs_turb_convergence/'
 path_save_First_look = 'CASE_'+CASE+'/PNGs_First_look/'
 path_save_geometric = 'CASE_'+CASE+'/PNGs_geometric/'
@@ -174,7 +174,6 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
         client = Client(cluster)
         print("Dashboard at :",client.dashboard_link)
     
-    
     # =======================================================================================================
     # BUILDING FILES                                                                                        |
     # =======================================================================================================
@@ -217,10 +216,11 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     # Building structure functions
     #   this process is long. Much longer if you have many boxes and big domains
     N = 2
-    save_S_n_SAR(dsSAR,2,d_boxes['SAR'],path_data_turb)
+    save_S_n_SAR(dsSAR,2,d_boxes['SAR'],client,path_data_turb)
     dsS2_SAR = xr.open_dataset(path_data_turb+'S_2_sig0.nc')
-    save_S_n_LES(dsCS,'M',10,2,path_data_turb)
+    save_S_n_LES(dsCS,'M',10,2,client,path_data_turb)
     dsS2_LES_M10 = xr.open_dataset(path_data_turb+'S_2_M10.nc')
+    raise Exception('i m done')
     # N = 3
     # save_S_n_SAR(dsSAR,3,d_boxes['SAR'],path_data_turb)
     # dsS2_SAR = xr.open_dataset(path_data_turb+'S_3_sig0.nc')
@@ -285,6 +285,9 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     if CS_R_EQUIVALENT:
         print('* Computes an equivalent radius for each coherent structure, for each boxes of the LES.')
         # 1 profile or r_eq for each boxe and for each structure.
+        R_equivalent_for_all_objects(dsCS,LES_res,path_save_CS)
+        
+
 
     end = time.time()
     print('Total runtime of analyse.py :'+sec2hms(end - start))

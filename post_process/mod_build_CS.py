@@ -219,16 +219,8 @@ def get_global_mask(dsIN,mask_condition_2):
 
     """
     SV1 = dsIN.SVT001.data
-    SV3 = dsIN.SVT003.data
     SV4 = dsIN.SVT004.data
 
-    #bothSVup = xr.where( np.logical_and(mask_condition_2[0]==1,mask_condition_2[1]==1) )
-    #bothSVss = xr.where( np.logical_and(mask_condition_2[0]==2,mask_condition_2[1]==2) )
-
-    # global_mask = xr.where( mask_condition_2[0]==1 ,1,0)            # up from SV1
-    # global_mask = xr.where( mask_condition_2[0]==2 ,2,global_mask)  # ss from SV1
-    # global_mask = xr.where( mask_condition_2[1]==1 ,3,global_mask)  # up from SV4
-    # global_mask = xr.where( mask_condition_2[1]==2 ,4,global_mask)  # ss from SV4
     global_mask = xr.where( mask_condition_2[0]==1 ,1,0)            # up from SV1
     global_mask = xr.where( mask_condition_2[0]==2 ,2,global_mask)  # ss from SV1
     global_mask = xr.where( np.logical_and(mask_condition_2[1]==1,SV1<SV4) ,3,global_mask)  # up from SV4
@@ -327,20 +319,19 @@ def build_CS(path_in,path_out,dsO_i,dsmean,d_boxes,gamma=0.005,mCS=1.0):
             print('     -> computing boxe n° '+boxe+' ...')
             O = d_boxes['boxes'][boxe]['O']
             # selecting boxe area
-            dsINPUT = dsO_i.sel(ni=slice(O[0],O[0]+Lx),
-                            nj=slice(O[1],O[1]+Ly),)
-            
+            dsINPUT = dsO_i.sel(ni=slice(O[0],O[0]+Lx),nj=slice(O[1],O[1]+Ly))       
+
             # compute fluctuations ?
-            THT[k,:,:,:] = dsINPUT.THT.data
-            RVT[k,:,:,:] = dsINPUT.RVT.data
-            U[k,:,:,:] = dsINPUT.UT.data		
-            V[k,:,:,:] = dsINPUT.VT.data			
-            W[k,:,:,:] = dsINPUT.WT.data	
-            TKE[k,:,:,:] = dsINPUT.TKET.data 	
+            U[k,:,:,:,:] = dsINPUT.UT.data		
+            V[k,:,:,:,:] = dsINPUT.VT.data			
+            W[k,:,:,:,:] = dsINPUT.WT.data	
+            THT[k,:,:,:,:] = dsINPUT.THT.data
+            RVT[k,:,:,:,:] = dsINPUT.RVT.data
+            TKE[k,:,:,:,:] = dsINPUT.TKET.data 	
             SV1[k,:,:,:,:] = dsINPUT.SVT001.data
             SV3[k,:,:,:,:] = dsINPUT.SVT003.data
             SV4[k,:,:,:,:] = dsINPUT.SVT004.data
-            THTV[k,:,:,:] = Compute_THTV(THT[k,:,:,:],RVT[k,:,:,:])
+            THTV[k,:,:,:,:] = Compute_THTV(THT[k,:,:,:],RVT[k,:,:,:])
 
             X[k,:] = dsINPUT.ni.data
             Y[k,:] = dsINPUT.nj.data
@@ -375,38 +366,36 @@ def build_CS(path_in,path_out,dsO_i,dsmean,d_boxes,gamma=0.005,mCS=1.0):
 
         num_to_ob = np.array(['updraft_1','sub._shells_1','updrafts_2','sub._shells_2','downdrafts'])
         
-        L_dim = ['nboxe','time','level','coord_x','coord_y']
-        L_dim_2 = ['nboxe','Nsv','time','level','coord_x','coord_y']
-
-        
+        L_dim = ['nboxe','time','level','coord_y','coord_x']
+        L_dim_2 = ['nboxe','Nsv','time','level','coord_y','coord_x']
 
         #print(object_mask.shape,num_to_ob.shape,X.shape)
         data_vars = {
-                'U':(L_dim,U.data,{'long_name':'Mean zonal wind',
+                'U':(L_dim,U.data,{'long_name':'Zonal wind',
                             'units':'m s-1',
                             'grid location':'mass_center'}),
-                'V':(L_dim,V.data,{'long_name':'Mean meridional wind',
+                'V':(L_dim,V.data,{'long_name':'Meridional wind',
                             'units':'m s-1',
                             'grid location':'mass_center'}),
-                'W':(L_dim,W.data,{'long_name':'Mean vertical wind',
+                'W':(L_dim,W.data,{'long_name':'Vertical wind',
                             'units':'m s-1',
                             'grid location':'mass_center'}),
-                'THT':(L_dim,THT.data,{'long_name':'Mean potential temperature',
+                'THT':(L_dim,THT.data,{'long_name':'Potential temperature',
                             'units':'K',
                             'grid location':'mass_center'}),
-                'RVT':(L_dim,RVT.data,{'long_name':'Mean mixing ratio',
+                'RVT':(L_dim,RVT.data,{'long_name':'Mixing ratio',
                             'units':'kg/kg',
                             'grid location':'mass_center'}),
-                'THTV':(L_dim,THTV.data,{'long_name':'Mean virtual potential temperature',
+                'THTV':(L_dim,THTV.data,{'long_name':'Virtual potential temperature',
                             'units':'K',
                             'grid location':'mass_center'}),			
-                'SV1':(L_dim,SV1.data,{'long_name':'mean tracer1 concentration',
+                'SV1':(L_dim,SV1.data,{'long_name':'Tracer1 concentration',
                             'units':'kg kg-1',
                             'grid location':'mass_center'}),
-                'SV3':(L_dim,SV3.data,{'long_name':'mean tracer3 concentration',
+                'SV3':(L_dim,SV3.data,{'long_name':'Tracer3 concentration',
                             'units':'kg kg-1',
                             'grid location':'mass_center'}),
-                'SV4':(L_dim,SV4.data,{'long_name':'mean tracer4 concentration',
+                'SV4':(L_dim,SV4.data,{'long_name':'Tracer4 concentration',
                             'units':'kg kg-1',
                             'grid location':'mass_center'}),
                 'object_mask':(L_dim_2,object_mask.data,{'long_name':'Condition 2 : individual object mask',
@@ -424,9 +413,7 @@ def build_CS(path_in,path_out,dsO_i,dsmean,d_boxes,gamma=0.005,mCS=1.0):
                 'Y':(['nboxe','coord_y'],Y.data,{'long_name':'nj dimension in the boxe',
                             'units':'m',
                             'grid location':'mass_center'}),
-                }
-        # ajouter une variable qui fait le lien entre numéro objet et nom de l'objet
-        
+                }        
 
         encoding = {'U':{'dtype':'float32'},
                     'V':{'dtype':'float32'},
@@ -442,6 +429,9 @@ def build_CS(path_in,path_out,dsO_i,dsmean,d_boxes,gamma=0.005,mCS=1.0):
                     'obj_name':{'dtype':'str'},
                     'X':{'dtype':'float32'},
                     'Y':{'dtype':'float32'},
+                    'nboxe':{'dtype':'int16'},
+                    'coord_x':{'dtype':'int16'},
+                    'coord_y':{'dtype':'int16'},
                     }
 
         ds_CS = xr.Dataset(data_vars=data_vars,coords=coords2,

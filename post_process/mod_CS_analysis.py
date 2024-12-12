@@ -436,12 +436,64 @@ def step_fit_ellipse():
 # METHOD 2:
 # Req = A / Npixels
 
-def equivalent_radius_object():
+def equivalent_radius_object(mask,resolutionH):
     """
-    This function computes the area of the mask for one object, then divide by the surface of 1 pixel to get an equivalent radius
+    This function computes the area of the mask for one object, then assume a circular shape to get an equivalent radius
+    
+    INPUTS:
+        - mask: xarray DataArray 3D (level,coord_y,coord_x) field with 1 where a structure is present, 0 else.
+        - resolutionH: horizontal resolution (m)
+
+    OUTPUTS:
+        - a scalar, the equivalent radius for the 'mask'
+    
+    """
+    # here i will sum on dim that are not 'level'
+    dims = mask.dims
+    dimsum = [dim for dim in dims if dim!='level']
+    print(dimsum)
+    A = mask.sum(dimsum)
+    R = np.sqrt(A/np.pi)
+    return R
+
+def R_equivalent_for_all_objects(dsCS,resolutionH,path_save):
+    """
+    This function computes a equivalent radius for each coherent structure, at every altitude.
+
+    INPUTS:
+        -
+
+    OUTPUTS:
+        - a plot of R(z) for each structures
+
     """
 
-def R_equivalent_for_all_objects():
-    """
-    This function computes a equivalent radius for each coherent structure
-    """
+    global_mask = dsCS.global_mask
+    Z = dsCS.level
+    Nboxe = len(dsCS.nboxe)
+
+    is_up1 = xr.where( dsCS.global_mask==1,1,0 )
+    is_ss1 = xr.where( dsCS.global_mask==2,1,0 )
+    is_up2 = xr.where( dsCS.global_mask==3,1,0 )
+    is_ss2 = xr.where( dsCS.global_mask==4,1,0 )
+    is_down = xr.where( dsCS.global_mask==5,1,0 )
+    list_mask = [is_up1,is_ss1,is_up2,is_ss2,is_down]
+    colors_obj = ['r','purple','orange','pink','g']
+    labels_obj = ['up1','ss1','up2','ss2','down']
+    Req = np.zeros((Nboxe,len(list_mask),len(Z)))
+
+    for k,boxe in enumerate(dsCS.nboxe):
+        for imask in range(len(list_mask)):
+            Req[k,imask,:] = equivalent_radius_object(list_mask[imask],resolutionH)
+
+    fig, ax = plt.subplots(1,Nboxe,figsize = (3*Nboxe,5),constrained_layout=True,dpi=200)
+    for k,boxe in enumerate(dsCS.nboxe):
+        ax[k].plot(Req[k,:,:],Z,c=colors_obj,label=labels_obj)
+        ax[k].set_xlabel('Req (m)')
+        ax[k].set_title(boxe,location='right')
+    ax[0].set_ylabel('Z (m)') 
+    fig.savefig(path_save + 'Requivalent_Z_allobjects.png')
+
+# A faire: fonction qui regarde l'aire de chaque structure, plot une distribution de Req en fonction de Z.
+
+

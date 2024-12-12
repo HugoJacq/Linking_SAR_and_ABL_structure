@@ -5,6 +5,8 @@ import pathlib
 import cv2
 from scipy.linalg import inv, eigh, solve
 from scipy import signal
+from dask.distributed import Client,LocalCluster
+from dask.distributed import progress
 
 """
 To be used with analyse.py
@@ -379,7 +381,7 @@ def get_parameters(x):
  
   return tuple(np.sqrt(rr2)), tuple(Xc), alpha
 
-def Nth_structure_function_2D(Array,resolution,N=2):
+def Nth_structure_function_2D(Array,resolution,client,N=2):
     """
     This function computes the Nth order structure function of the user-provided Array of the form A(x,y)
 
@@ -392,6 +394,8 @@ def Nth_structure_function_2D(Array,resolution,N=2):
           Remote Sensing Letters, https://doi.org/10.1080/2150704X.2022.2112107
 
         see jupyter notebook : https://github.com/cgranerob/2D-Structure-Functions/blob/main/Script.ipynb  
+
+        The computation can be done in parallel with Dask (SERIAL=False)
 
     INPUT:
         - Array : xarray DataArray, 2D
@@ -413,13 +417,9 @@ def Nth_structure_function_2D(Array,resolution,N=2):
     name2 = dim2.name
 
     # building lx,ly
-    #resx = dim1[1]-dim1[0]
     Nx = len(dim1)
-    #lx = np.arange(-(Nx//2-1)*resx,(Nx//2)*resx,resx)
     lx = np.arange(-(Nx//2-1)*resolution,(Nx//2)*resolution,resolution)
-    #resy = dim2[1]-dim2[0]
     Ny = len(dim2)
-    #ly = np.arange(-(Ny//2-1)*resy,(Ny//2)*resy,resy)
     ly = np.arange(-(Ny//2-1)*resolution,(Ny//2)*resolution,resolution)
 
     # building DataArray of S_n
@@ -428,38 +428,51 @@ def Nth_structure_function_2D(Array,resolution,N=2):
                                  dims=('lx','ly'),
                                  coords=coords)# .chunk(chunks)
     if not SERIAL:
-        # parallel version
-        # method : we create an array with only 4 values filled and 0 elswhere.
-        #   then all of these array are summed to get S_n
-        Array = Array.compute() # going with numpy, chunk({'coord_x':200,'coord_y':200})
-        def shift_and_mean(i,j,Array):
-            # this is a function to build a // version
-            shifted = Array.roll(shifts={name1:i,name2:j})
-            results = xr.DataArray( np.zeros((len(lx),len(ly))),
-                                        dims=('lx','ly'),
-                                        coords=coords).chunk({'lx':200,'ly':200})
-            results.loc[dict(lx=i*resolution,ly=j*resolution)] = ((shifted - Array)**N ).mean()
+        Array = Array.load()
+        # parallel version from chatgpt        
+        def process_shift_batch(indices, Array, name1, name2, resolution, N):
+            results = []
+            for (i, j) in indices:
+                # Perform the shift and compute mean for each combination
+                shifted = Array.roll(shifts={name1: i, name2: j})
+                result_1 = ((shifted - Array) ** N).mean()
+                results.append((i * resolution, j * resolution, result_1))
 
-            shifted = Array.roll(shifts={name1:i,name2:-j})
-            results.loc[dict(lx=i*resolution,ly=-j*resolution)] = ((shifted - Array)**N ).mean()
+                shifted = Array.roll(shifts={name1: i, name2: -j})
+                result_2 = ((shifted - Array) ** N).mean()
+                results.append((i * resolution, -j * resolution, result_2))
 
-            shifted = Array.roll(shifts={name1:-i,name2:-j})
-            results.loc[dict(lx=-i*resolution,ly=-j*resolution)] = ((shifted - Array)**N ).mean()
-            
-            shifted = Array.roll(shifts={name1:-i,name2:j})
-            results.loc[dict(lx=-i*resolution,ly=j*resolution)] = ((shifted - Array)**N ).mean()
+                shifted = Array.roll(shifts={name1: -i, name2: -j})
+                result_3 = ((shifted - Array) ** N).mean()
+                results.append((-i * resolution, -j * resolution, result_3))
+
+                shifted = Array.roll(shifts={name1: -i, name2: j})
+                result_4 = ((shifted - Array) ** N).mean()
+                results.append((-i * resolution, j * resolution, result_4))
             return results
 
-        arrays = [da.from_delayed(
-                        dask.delayed(shift_and_mean)(i,j,Array),
-                        shape=(len(lx),len(ly)),
-                        dtype=float
-                                )
-                            for i in np.arange((len(dim1)//2)) 
-                            for j in np.arange((len(dim2)//2))     ]
+        # Dask-based parallel computation
+        def parallel_shift_and_mean(Array, dim1, dim2, S_n, name1, name2, resolution, N):
+            futures = []
 
-        computed = dask.compute(*arrays) # this is where computations are triggered
-        S_n = da.stack(computed).sum(axis=0).compute() # this .compute is for the sum
+            # submiting futures in batches to reduce overhead
+            batch_size = 20
+            indices = [(i, j) for i in range(len(dim1) // 2) for j in range(len(dim2) // 2)]
+            for batch_start in range(0, len(indices), batch_size):
+                batch_indices = indices[batch_start:batch_start + batch_size]
+                futures.append(client.submit(process_shift_batch, batch_indices, Array, name1, name2, resolution, N))
+
+            # Compute all tasks lazily, then gather the result 
+            results = client.gather(futures)
+            progress(results)
+            # assign results to the DataArray S_n
+            for task_results in results:
+                for lx,ly,resultat in task_results:
+                    S_n.loc[dict(lx=lx,ly=ly)] = resultat
+            return S_n
+
+        
+        S_n = parallel_shift_and_mean(Array, dim1, dim2, S_n, name1, name2, resolution, N)
 
     # serial version
     if SERIAL:
@@ -489,7 +502,7 @@ def Nth_structure_function_2D(Array,resolution,N=2):
     return lx,ly,S_n
 
 # FUNCTIONS FOR MY ANALYSIS 
-def save_S_n_SAR(dsSAR,N,d_boxes,path_save):
+def save_S_n_SAR(dsSAR,N,d_boxes,client,path_save):
     """
     This function saves the values of the Nth stucture function for SAR data.
     this is done for each boxe from 'd_boxes'
@@ -498,12 +511,18 @@ def save_S_n_SAR(dsSAR,N,d_boxes,path_save):
         - dsSAR : xarray dataset with SAR data
         - N : order of structure function
         - d_boxes : where are the boxes
+        - client: dask client, can be None. In this case, a client is created
         - path_save : where to save file
     OUTPUT:
         - a netcdf file with S_n,lx,ly
     """
     print(' * Building S_'+str(N)+' for SAR')
+    if client==None:
+        cluster = LocalCluster(n_workers=16) # n_workers=16
+        client = Client(cluster)
     
+    print("     Dashboard at :",client.dashboard_link)
+
     nameA = 'sig0'
     name_out = path_save+'S_'+str(N)+'_'+nameA+'.nc'
     IS_HERE = pathlib.Path(name_out).is_file()
@@ -516,17 +535,15 @@ def save_S_n_SAR(dsSAR,N,d_boxes,path_save):
         else:
             print('     - File is already here : '+name_out)
     else:
+
         lon = dsSAR.longitude
         lat = dsSAR.latitude
-
         res = dsSAR.sampleSpacing.values
         Nx = d_boxes['Lx']*1000//res
         Ny = d_boxes['Ly']*1000//res
         Nmax =  int(min(Nx,Ny)) # reduce this for debug
         Nboxe = len(d_boxes['boxes'])
 
-
-        
         S_n = np.zeros((Nboxe,Nmax-1,Nmax-1))
         variance = np.zeros(Nboxe)
         origin = np.zeros((Nboxe,2))
@@ -540,7 +557,7 @@ def save_S_n_SAR(dsSAR,N,d_boxes,path_save):
             indlineRight,indsampleRight =  indlineO + int(Nx), indsampleO + int(Ny)
             
             sig0 = dsSAR.sigma0_detrend.isel(line=slice(indlineO,indlineRight),sample=slice(indsampleO,indsampleRight))
-            lx,ly,S_n[k,:,:] = Nth_structure_function_2D(sig0,res,N)
+            lx,ly,S_n[k,:,:] = Nth_structure_function_2D(sig0,res,client,N)
             variance[k] = sig0.var()
             origin[k,0],origin[k,1] = O[0],O[1]
             origin_sat[k,0],origin_sat[k,1] = indsampleO,indlineO
@@ -617,7 +634,7 @@ def save_S_n_SAR_OVL(dsSAR,N,d_boxes,path_save):
         ds.to_netcdf(path=name_out,mode='w')
         ds.close()
 
-def save_S_n_LES(dsCS,VAR,atZ,N,path_save):
+def save_S_n_LES(dsCS,VAR,atZ,N,client,path_save):
     """
     This function saves the values of the Nth stucture function for LES data.
     this is done for each boxe from 'd_boxes'
@@ -627,13 +644,18 @@ def save_S_n_LES(dsCS,VAR,atZ,N,path_save):
         - VAR : str, Choice of var
         - atZ : altitude (m)
         - N : order of structure function
+        - client: dask client, can be None. In this case, a client is created
         - path_save : where to save file
     OUTPUT:
         - a netcdf file with S_n,lx,ly
     """
     print(' * Building S_'+str(N)+' for LES')
     print('     var is : '+VAR+' at z='+str(atZ)+'m')
+    if client==None:
+        cluster = LocalCluster(n_workers=16) # n_workers=16
+        client = Client(cluster)
     
+    print("     Dashboard at :",client.dashboard_link)
     
     indt = -1 
     nameA = VAR+str(atZ)
@@ -653,10 +675,8 @@ def save_S_n_LES(dsCS,VAR,atZ,N,path_save):
         if VAR=='M':
             A = np.sqrt( dsIN.U.isel(level=indz10)**2 + dsIN.V.isel(level=indz10)**2 )
 
-
-
         if False: # reduce the size for debug
-            Nmax=10
+            Nmax=50
         else:
             Nmax = len(A.coord_x)
         A = A.isel(coord_x=slice(0,Nmax),coord_y=slice(0,Nmax)) 
@@ -666,7 +686,7 @@ def save_S_n_LES(dsCS,VAR,atZ,N,path_save):
         for k in range(len(dsCS.nboxe)):
             print('Boxe=',k+1)
             var = A.isel(nboxe=k)
-            lx,ly,S_n[k,:,:] = Nth_structure_function_2D(var,LES_res,N)
+            lx,ly,S_n[k,:,:] = Nth_structure_function_2D(var,LES_res,client,N)
             variance[k] = var.var()
             origin[k,0],origin[k,1] = dsIN.X.isel(nboxe=k,coord_x=0),dsIN.Y.isel(nboxe=k,coord_y=0)
         coords={'nboxe':np.arange(1,Nboxe+1),'lx': lx,'ly':ly,'dim_origin':['X','Y']}
