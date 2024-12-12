@@ -4,7 +4,7 @@
   <img width="600" height="450" src="https://github.com/HugoJacq/Linking_SAR_and_ABL_structure/blob/main/SST_and_SAR.png">
 </p>
 
-This repo gather the material needed for the study 'Linking_SAR_and_ABL_structure'.
+This repo gather the material needed for the ongoing study 'Linking_SAR_and_ABL_structure'.
 In this README, you will find a description of the files (and their origin), how to reproduce the simulations and how to use the post-process scripts
 
 This README is organised as follow:
