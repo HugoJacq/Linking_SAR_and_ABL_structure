@@ -179,7 +179,7 @@ tical structure of the MABL ?
 - generator of boxe for boxe SAR and LES (+ mean variables, mean flux for each boxes in the LES).
 - a function that computes the Nth order structure function. I plotted results with N = 2.
 - the grid nesting setup is ok to have a turbulent inflow. A written conclusion is available in the latex file. This could be improved by doing the same analysis on a bigger domain to have more converged spectra.
-- 
+- a function that computes the equivalent radius for coherent structure at each altitude, for each object.
 
 ### 4.3 What I think needs to be done
 
@@ -190,7 +190,7 @@ I split this section in two: technical needs are some improvement that I see tha
 - modify `Where_boxes` to allow selection of which SAR boxes are plotted
 - run the function to build the 3rd order structure function and plot it for LES and SAR boxes
 - finish `Plot_top_view_var`
-- build a function that computes the equivalent radius for coherent structure at each altitude, for each object.
+
 
 #### Scientific needs
 
@@ -202,8 +202,9 @@ I split this section in two: technical needs are some improvement that I see tha
 - Link zi/L and a Richardson number to each boxes.
 - For LES: find better boxes ? How what criteria ?
 - Link contribution of turbulent flux by each coherent structure with surface values.
-- Look at the temporal evolution of the LES: SAR is only a snapshot (this mean getting more frequent ouput, diskspace management).
+- Look at the temporal evolution of the LES: SAR is only a snapshot (this means getting more frequent ouput, diskspace management).
 - Try structure function on other variables than the wind: passive tracer, moisture, temperature ? 
+- Use a rappel force toward ERA5 profiles ? This would be useful if the setup happen to diverge greatly from this atmospheric state.
 
 ## 5. Contact
 
