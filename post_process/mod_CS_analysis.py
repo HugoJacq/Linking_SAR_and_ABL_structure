@@ -1,5 +1,6 @@
 from module_tools import *
 from scipy.ndimage import label as SPlabel
+from scipy.stats import gaussian_kde
 
 def mean_vertical_contrib(flx_i,flx_mean,indzi):
 	"""This function is computing the mean contribution of flx_i to the total
@@ -451,31 +452,34 @@ def equivalent_radius_object(mask,resolutionH):
     # here i will sum on dim that are not 'level'
     dims = mask.dims
     dimsum = [dim for dim in dims if dim!='level']
+    
     A = mask.sum(dimsum)*resolutionH**2
     R = np.sqrt(A/np.pi)
+    #print('N=',mask.sum(dimsum).values,'R=',R.values)
     return R
 
 def R_equivalent_for_all_objects(dsCS,dsmean,resolutionH,path_save):
     """
     This function computes a equivalent radius for each coherent structure, at every altitude.
 
-    INPUTS:
-        -
+    INPUTS: 
+        - dsCS: xarray Dataset with conditionally sampled objects
+        - dsmean: xarray Dataset with mean fields
+        - resolutionH: horizontal resolution (m)
+        - path_save: where to save figures
 
     OUTPUTS:
         - a plot of R(z) for each structures
-
+        - a 2D plot with the pdf of R(z). White profile is mean, grey is most represented mode
     """
     dsCS = dsCS.isel(time=-1) # this can be removed when time is taken into account
     global_mask = dsCS.global_mask
     Z = dsCS.level
     Nboxe = len(dsCS.nboxe)
+    Rmax = 200
+    Npdf = 100
 
-    # is_up1 = xr.where( dsCS.global_mask==1,1,0 )
-    # is_ss1 = xr.where( dsCS.global_mask==2,1,0 )
-    # is_up2 = xr.where( dsCS.global_mask==3,1,0 )
-    # is_ss2 = xr.where( dsCS.global_mask==4,1,0 )
-    # is_down = xr.where( dsCS.global_mask==5,1,0 )
+
     is_up1 = global_mask.where(global_mask==1,0)
     is_ss1 = global_mask.where(global_mask==2,0)/2
     is_up2 = global_mask.where(global_mask==3,0)/3
@@ -485,33 +489,66 @@ def R_equivalent_for_all_objects(dsCS,dsmean,resolutionH,path_save):
     colors_obj = ['r','purple','orange','pink','g']
     labels_obj = ['up1','ss1','up2','ss2','down']
     Req = np.zeros((Nboxe,len(list_mask),len(Z)))
+    Req_mode = np.zeros((Nboxe,len(list_mask),len(Z)))
     labels = xr.zeros_like(is_up1.isel(nboxe=0,level=0))
 
+    # for pdf at each level, each object, each boxe
+    discrete_R = np.linspace(0,Rmax,Npdf)
+    PDFReq = np.zeros((Nboxe,len(list_mask),len(Z),len(discrete_R)))
+    
+
+    # labels.data, Nlabel = SPlabel(list_mask[2].isel(nboxe=0,level=20),
+    #                                           structure=[[1,1,1],
+    #                                                      [1,1,1],
+    #                                                      [1,1,1]])
+    # Req = np.zeros(Nlabel)
+    # Rmean = 0
+    # for i in range(1,Nlabel):  # start at 1 because 0 is everything not labelled
+    #     Req[i] = equivalent_radius_object(xr.where( labels==i,1,0),resolutionH)
+    #     Rmean += Req[i]
+    # Rmean = Rmean / Nlabel
+    # discrete_R = np.linspace(0,Rmax,Npdf)
+    # kernel = gaussian_kde(Req)
+    # PDF = kernel.pdf(discrete_R)
+
+
+    # zi = get_ABLH(Z,dsmean.THTvm.isel(nboxe=0))
+    # fig, ax = plt.subplots(1,1,figsize = (5,5),constrained_layout=True,dpi=200)
+    # ax.plot(discrete_R,PDF,c='k')
+    # ax.vlines(Rmean,0,0.008,linestyles='--',colors='gray')
+    # ax.set_xlabel('Req (m)')
+    # ax.set_ylabel('PDF')
+    # ax.set_title('Z = '+str(Z[20].values/zi)+' m')
+    # plt.show()
+
+
+
     # unique object identification with scipy
-    for k,boxe in enumerate(dsCS.nboxe[:1]):
-        print('I work on boxe '+str(boxe.values))
+    for k,boxe in enumerate(dsCS.nboxe): # [:1]
+        print('     I work on boxe '+str(boxe.values))
         for imask in range(len(list_mask)): #  1 len(list_mask)
-            print(' '+labels_obj[imask])
+            print('     - '+labels_obj[imask])
             for iz in range(len(Z)): # len(Z) 5
-                labels.data, Nlabel = SPlabel(list_mask[imask].isel(nboxe=k,level=iz))
-                if iz==50:
-                    print('Z= ',Z[iz].values)
-                    fig, ax = plt.subplots(1,1,figsize = (3,3),constrained_layout=True,dpi=200)
-                    ax.pcolormesh(labels)
-                    plt.show()
-                for i in range(Nlabel):
-                    Req[k,imask,iz] += equivalent_radius_object(xr.where( labels==i,1,0),resolutionH)
-                if Nlabel>0:
-                    Req[k,imask,iz] = Req[k,imask,iz] / Nlabel    
+
+                # We look for things to label with scipy
+                labels.data, Nlabel = SPlabel(list_mask[imask].isel(nboxe=k,level=iz),
+                                              structure=[[1,1,1],
+                                                         [1,1,1],
+                                                         [1,1,1]])
+                Radius_i = np.zeros(Nlabel)
+                for i in range(1,Nlabel):  # start at 1 because 0 is everything not labelled
+                    Radius_i[i] = equivalent_radius_object(xr.where( labels==i,1,0),resolutionH)
+                if Nlabel<2:
+                    Req[k,imask,iz] = 0
+                    PDFReq[k,imask,iz,:] = 0
+                    Req_mode[k,imask,iz] = 0
                 else:
-                     Req[k,imask,iz] = 0
-                print('         Z = ',Z[iz].values,' at this level, '+str(Nlabel)+' obj, Req = ',Req[k,imask,iz])
-                
+                    Req[k,imask,iz] = Radius_i.mean()
+                    kernel = gaussian_kde(Radius_i)
+                    PDFReq[k,imask,iz,:] = kernel.pdf(discrete_R)
+                    Req_mode[k,imask,iz] = discrete_R[np.argmax(PDFReq[k,imask,iz,:])]
 
-    # for k,boxe in enumerate(dsCS.nboxe):
-    #     for imask in range(len(list_mask)):
-    #         Req[k,imask,:] = equivalent_radius_object(list_mask[imask][k],resolutionH)
-
+    # Plot of Req mean at all Z
     fig, ax = plt.subplots(1,Nboxe,figsize = (3*Nboxe,5),constrained_layout=True,dpi=200)
     for k,boxe in enumerate(dsCS.nboxe):
         zi = get_ABLH(Z,dsmean.THTvm.isel(nboxe=k)) # Boundary layer height
@@ -520,10 +557,33 @@ def R_equivalent_for_all_objects(dsCS,dsmean,resolutionH,path_save):
             ax[k].set_xlabel('Req (m)')
             ax[k].set_title('boxe '+str(boxe.values),loc='right')
             ax[k].set_ylim([0,1.2])
-            #ax[k].set_xlim([0,100])
+            ax[k].set_xlim([0,200])
     ax[0].set_ylabel('Z (m)') 
-    fig.savefig(path_save + 'Requivalent_Z_allobjects.png')
+    fig.savefig(path_save + 'Requivalent_avg_atZ_allobjects_allLESboxes.png')
 
+    # Plot of the distribution of Req at all Z, with the mean profile too.
+    for k,boxe in enumerate(dsCS.nboxe): # [:1]
+        zi = get_ABLH(Z,dsmean.THTvm.isel(nboxe=k)) # Boundary layer height
+        fig, ax = plt.subplots(2,3,figsize = (8,7),constrained_layout=True,dpi=200)
+        axe = ax.flatten()
+        for imask in range(len(list_mask)):
+            s = axe[imask].pcolormesh(discrete_R,Z/zi,PDFReq[k,imask,:,:],cmap='plasma',vmin=0.001,vmax=0.01,norm='log')
+            axe[imask].plot(Req[k,imask,:],Z/zi,c='white')
+            axe[imask].plot(Req_mode[k,imask,:],Z/zi,c='grey')
+            axe[imask].set_title(labels_obj[imask],loc='right')
+            axe[imask].set_ylim([0,1.2])
+            axe[imask].set_xlim([0,Rmax])
+            axe[imask].set_xlabel('Req (m)')
+            if imask==0 or imask==3:
+                 axe[imask].set_ylabel('Z/zi')
+            
+            
+            
+        axe[-1].set_axis_off()
+        cax = axe[-1].inset_axes([0.0, 0.1, 0.1, 0.8], transform=axe[-1].transData)
+        fig.colorbar(s, cax=cax, orientation='vertical',aspect=50)
+        fig.savefig(path_save + 'PDF_Requivalent_boxe'+str(boxe.values)+'.png')
+    
 # A faire: fonction qui regarde l'aire de chaque structure, plot une distribution de Req en fonction de Z.
 
 

@@ -232,32 +232,31 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
 
     # TURB_STATS
     if VERIFY_TURB_CONVERGENCE:
-        print('* Verification of turbulence at inflow')
+        print('\n* Verification of turbulence at inflow')
         plot_energy_spectrum(dsO,altZ_convergence,liste_X_turb_convergence,B_KPSD,A,Kcoeff,path_save_turb_convergence)
         
     # FIRST LOOK --------------------
     if PLOT_10m_WIND:
-        print('* 10m wind')
+        print('\n* 10m wind')
         Wind_10m_in_boxes_vs_SAR(dsCS,dsSAR,indt=-1,d_boxes=d_boxes,path_save=path_save_First_look)
     if WHERE_ARE_THE_BOXES:
-        print('* Plotting location of boxes on LES and SAR')
+        print('\n* Plotting location of boxes on LES and SAR')
         Where_boxes(dsO_i,dsSAR,dsSST,indt=-1,d_boxes=d_boxes,SAR_SIZE=SAR_SIZE,path_save=path_save_First_look)
 
     # GEOMETRICS --------------------
     if PLOT_2D_COVARIANCE:
-        print('* Plotting 2D covariance')
+        print('\n* Plotting 2D covariance')
         N = 2
         Plot_S_n(dsS2_SAR,'sig0',N,path_save=path_save_geometric)
         Plot_S_n(dsS2_LES_M10,'M10',N,path_save=path_save_geometric)
     if PLOT_2D_SKEWNESS:
-        print('* Plotting 2D skewness')
+        print('\n* Plotting 2D skewness')
         N = 3
         print('TO BE DONE')
 
     if S2_ANALYSIS:
-        print('* tests')
-        # compute_integral_scale_at_tht is ok      
-        # test S2_analysis ?
+        print('\n* tests')
+        # I need to find a test case for S2_analysis ?
         path_out = 'DATA_TURB/'
         S2_analysis('SAR','sigma0_detrend',dsS2_SAR,d_boxes,path_out)
         S2_analysis('LES','M10',dsS2_LES_M10,d_boxes,path_out)
@@ -266,23 +265,23 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
    
     # COHERENT STRUCTURE ANALYSIS ---
     if PLOT_MEAN_PROGVAR:
-        print('* Plotting profiles of prognostic variables, with object decomposition')
+        print('\n* Plotting profiles of prognostic variables, with object decomposition')
         Plot_mean_progvar_allboxes(dsCS,dsmean,path_save_CS,Reynolds_avg)
         
     if PLOT_MEAN_FLX:
-        print('* Plotting profiles of fluxes, with object decomposition')
+        print('\n* Plotting profiles of fluxes, with object decomposition')
         Plot_mean_flux_allboxes(dsCS,dsmean,dsflx,path_save_CS,Reynolds_avg)
     
     if PLOT_TopView_with_CS:
         VAR_TOPVIEW = 'W'               # background of the top view
-        print('* Plotting top view of '+VAR_TOPVIEW+' with coherent structures')
+        print('\n* Plotting top view of '+VAR_TOPVIEW+' with coherent structures')
         Plot_top_view_var(dsCS,atZ=250,path_save=path_save_CS) # this is not finished
 
     if CS_LENGTH_WITH_LABEL:
-        print('* Find characteristic length scale of coherent structures')
+        print('\n* Find characteristic length scale of coherent structures')
 
     if CS_R_EQUIVALENT:
-        print('* Computes an equivalent radius for each coherent structure, for each boxes of the LES.')
+        print('\n* Computes an equivalent radius for each coherent structure, for each boxes of the LES.')
         # 1 profile or r_eq for each boxe and for each structure.
         R_equivalent_for_all_objects(dsCS,dsmean,LES_res,path_save_CS)
         
