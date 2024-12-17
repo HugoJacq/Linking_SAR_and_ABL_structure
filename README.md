@@ -204,6 +204,7 @@ I split this section in two: technical needs are some improvement that I see tha
 - Link contribution of turbulent flux by each coherent structure with surface values.
 - Look at the temporal evolution of the LES: SAR is only a snapshot (this means getting more frequent ouput, diskspace management).
 - Try structure function on other variables than the wind: passive tracer, moisture, temperature ? 
+- Use a rappel force toward ERA5 profiles ? This would be useful if the setup happen to diverge greatly from this atmospheric state.
 
 ## 5. Contact
 
