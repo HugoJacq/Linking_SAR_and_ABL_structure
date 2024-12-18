@@ -1,4 +1,4 @@
-# Linking_SAR_and_ABL_structure
+# Linking surface roughness from SAR and coherent structures from LES
 
 <p align="center">
   <img width="600" height="450" src="https://github.com/HugoJacq/Linking_SAR_and_ABL_structure/blob/main/SST_and_SAR.png">
