@@ -247,8 +247,8 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     if PLOT_2D_COVARIANCE:
         print('\n* Plotting 2D covariance')
         N = 2
-        Plot_S_n(dsS2_SAR,'sig0',N,path_txt=path_data_turb,path_save=path_save_geometric)
-        Plot_S_n(dsS2_LES_M10,'M10',N,path_txt=path_data_turb,path_save=path_save_geometric)
+        Plot_S_n(dsS2_SAR,'sig0',N,L_Nboxe=[1,19,34],path_txt=path_data_turb,path_save=path_save_geometric)
+        Plot_S_n(dsS2_LES_M10,'M10',N,L_Nboxe=[1,2,3],path_txt=path_data_turb,path_save=path_save_geometric)
     if PLOT_2D_SKEWNESS:
         print('\n* Plotting 2D skewness')
         N = 3

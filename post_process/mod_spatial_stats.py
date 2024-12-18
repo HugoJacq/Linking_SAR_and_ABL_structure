@@ -726,7 +726,6 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_txt='./',path_save='./'):
         name_txt_file = 'SAR_sigma0_detrend'
     name_txt_file = path_txt + name_txt_file + '_clear_sky_parameters.txt'
     Isfile = pathlib.Path(name_txt_file).is_file()
-    print(name_txt_file)
     if not Isfile:
         raise Exception('The text file with ellipse parameter is not here. Please run S2_analysis()')
     txt_file = open(name_txt_file, 'r')
@@ -738,6 +737,7 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_txt='./',path_save='./'):
     figsize2 = (15,5) # polar
     dpi = 200
     cmap = 'plasma'
+    XMAX = 3 # km
     if nameA[:3] =='M10':
         coeffx = 1/1000
         coeffy = 1/1000
@@ -756,10 +756,11 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_txt='./',path_save='./'):
     # cartesian plot
     fig, ax = plt.subplots(1,Nboxe,figsize = figsize,constrained_layout=True,dpi=dpi)
     for k,boxe in enumerate(L_Nboxe):
-        
         indboxe = nearest(dsS_n.nboxe.values,boxe)
-        #s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[indboxe,:,:],cmap=cmap,vmin=vmin,vmax=vmax,shading='nearest')
-        s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[indboxe,:,:],cmap=cmap,shading='nearest')
+        vmax = np.amax(S_n[indboxe,:,:].sel(lx=slice(-XMAX*1000,XMAX*1000),ly=slice(-XMAX*1000,XMAX*1000)))
+        
+        s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[indboxe,:,:],cmap=cmap,vmin=0.,vmax=vmax,shading='nearest')
+
         if N==2:
         # ellipse fit
             l_big = float(txt_lines[k].split()[6])/1000
@@ -772,7 +773,7 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_txt='./',path_save='./'):
         ax[k].set_ylabel('ly (km)')
         ax[k].set_xlabel('lx (km)')
         ax[k].set_title(r'$S_'+str(N)+r'^{lx,ly}$'+' of '+nameA+' boxe'+str(boxe))
-        XMAX = 3 # min(ax[k].get_ylim()[1],ax[k].get_xlim()[1])
+        # XMAX = min(ax[k].get_ylim()[1],ax[k].get_xlim()[1])
         ax[k].set_xlim([-XMAX,XMAX])
         ax[k].set_ylim([-XMAX,XMAX])
         ax[k].set_aspect(aspect)
