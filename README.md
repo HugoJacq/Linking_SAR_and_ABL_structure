@@ -4,6 +4,14 @@
   <img width="600" height="450" src="https://github.com/HugoJacq/Linking_SAR_and_ABL_structure/blob/main/SST_and_SAR.png">
 </p>
 
+**Figure 1**: Normalized SAR roughness from Sentinel-1A, swath of the 10th of December 2015, 17h08 UTC, south of South Africa (10-12-2015 absolut orbit number 8982, numéro de vignette, product unique ID) and contours of SST from L4 Regional product from Ifremer. Rectangle are the LES domains (work in progress).
+
+<p align="center">
+  <img width="600" height="450" src="https://github.com/HugoJacq/Linking_SAR_and_ABL_structure/blob/main/Boxe_location_SAR_LES.png">
+</p>
+
+**Figure 2**: Boxes location for SAR et LES (child domain) data. The choice of position of boxes can be automated for the SAR (it is the background of tiles numbered $>=$ 4 on the present image) but user can still specify location of interest (tiles 1 to 3 here). Background is the modulus of the 10 m wind for the LES, and the detrend surface roughness for the SAR. Contours are the SST analysis ODYSSEA.
+
 This repo gather the material needed for the ongoing study 'Linking_SAR_and_ABL_structure'.
 In this README, you will find a description of the files (and their origin), how to reproduce the simulations and how to use the post-process scripts
 
