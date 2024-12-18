@@ -435,7 +435,7 @@ def step_fit_ellipse():
 
 
 # METHOD 2:
-# Req = A / Npixels
+# Req = A / Npixels => fit a circle on each structure
 
 def equivalent_radius_object(mask,resolutionH):
     """
@@ -584,6 +584,5 @@ def R_equivalent_for_all_objects(dsCS,dsmean,resolutionH,path_save):
         fig.colorbar(s, cax=cax, orientation='vertical',aspect=50)
         fig.savefig(path_save + 'PDF_Requivalent_boxe'+str(boxe.values)+'.png')
     
-# A faire: fonction qui regarde l'aire de chaque structure, plot une distribution de Req en fonction de Z.
 
 

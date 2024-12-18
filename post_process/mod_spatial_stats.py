@@ -7,6 +7,7 @@ from scipy.linalg import inv, eigh, solve
 from scipy import signal
 from dask.distributed import Client,LocalCluster
 from dask.distributed import progress
+from matplotlib.patches import Ellipse
 
 """
 To be used with analyse.py
@@ -699,7 +700,7 @@ def save_S_n_LES(dsCS,VAR,atZ,N,client,path_save):
         ds.to_netcdf(path=name_out,mode='w')
         ds.close()
 
-def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_save='./'):
+def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_txt='./',path_save='./'):
     """
     This function plots the 2D spatial structure function of Array, with a overview of the array
 
@@ -716,6 +717,20 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_save='./'):
     lx = S_n.lx
     ly = S_n.ly
     Nboxe = len(L_Nboxe)
+    num_line_header = 14 # line at which data is written, after header
+
+    # ellipse parameters
+    if nameA == 'M10':
+        name_txt_file = 'LES_M10'
+    elif nameA == 'sig0':
+        name_txt_file = 'SAR_sigma0_detrend'
+    name_txt_file = path_txt + name_txt_file + '_clear_sky_parameters.txt'
+    Isfile = pathlib.Path(name_txt_file).is_file()
+    print(name_txt_file)
+    if not Isfile:
+        raise Exception('The text file with ellipse parameter is not here. Please run S2_analysis()')
+    txt_file = open(name_txt_file, 'r')
+    txt_lines = txt_file.readlines()[num_line_header:] # remove the header
 
     # plot settings
     aspect = 1
@@ -741,13 +756,23 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_save='./'):
     # cartesian plot
     fig, ax = plt.subplots(1,Nboxe,figsize = figsize,constrained_layout=True,dpi=dpi)
     for k,boxe in enumerate(L_Nboxe):
+        
         indboxe = nearest(dsS_n.nboxe.values,boxe)
-        s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[indboxe,:,:],cmap=cmap,vmin=vmin,vmax=vmax,shading='nearest')
+        #s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[indboxe,:,:],cmap=cmap,vmin=vmin,vmax=vmax,shading='nearest')
+        s = ax[k].pcolormesh(lx*coeffx,ly*coeffy,S_n[indboxe,:,:],cmap=cmap,shading='nearest')
+        if N==2:
+        # ellipse fit
+            l_big = float(txt_lines[k].split()[6])/1000
+            l_small = float(txt_lines[k].split()[7])/1000
+            angle = float(txt_lines[k].split()[9])
+            ellipse = Ellipse(xy=(0, 0), width=l_small, height=l_big, 
+                        edgecolor='w',fc='None', lw=1,angle=angle)
+            ax[k].add_patch(ellipse)
         plt.colorbar(s,ax=ax[k],aspect=50,pad=0.01)
         ax[k].set_ylabel('ly (km)')
         ax[k].set_xlabel('lx (km)')
         ax[k].set_title(r'$S_'+str(N)+r'^{lx,ly}$'+' of '+nameA+' boxe'+str(boxe))
-        XMAX = min(ax[k].get_ylim()[1],ax[k].get_xlim()[1])
+        XMAX = 3 # min(ax[k].get_ylim()[1],ax[k].get_xlim()[1])
         ax[k].set_xlim([-XMAX,XMAX])
         ax[k].set_ylim([-XMAX,XMAX])
         ax[k].set_aspect(aspect)
@@ -758,6 +783,7 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_save='./'):
     # polar plot
     fig, ax = plt.subplots(1,Nboxe,figsize = figsize2,constrained_layout=True,dpi=dpi)
     for k,boxe in enumerate(L_Nboxe):
+        # polar structure function
         indboxe = nearest(dsS_n.nboxe.values,boxe)
         axis_t, axis_r, _ = polar_axis(S_n[indboxe,:,:].values, 180)
         angle_from_north = 90-(-axis_t*180/np.pi)+azimuth_sat
@@ -770,6 +796,8 @@ def Plot_S_n(dsS_n,nameA,N,L_Nboxe=[1,2,3],path_save='./'):
         ax[k].xaxis.set_major_locator(ticker.MultipleLocator(2))
         ax[k].yaxis.set_major_locator(ticker.MultipleLocator(45))
     fig.savefig(path_save+'S'+str(N)+'_lxly_'+nameA+'_polar')
+    txt_file.close()
+
 
 def compute_integral_scale_at_tht(variance,S2_polar,r,atTheta,resolution):
     """
@@ -946,7 +974,7 @@ def S2_analysis(source,namevar,dsS2,d_boxes,path_out):
 
     file_a_moi = source+'_'+namevar+'_clear_sky_parameters.txt' 
     fullname = path_out + file_a_moi
-    file_final = open (fullname, 'w') 
+    file_final = open(fullname, 'w') 
     file_final.write(
     '#-------------------------------------------------------------- \n'\
     '# C00: num of boxe \n' \

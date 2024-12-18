@@ -54,7 +54,7 @@ SAR_SIZE = 'small'
 PLOT_10m_WIND       = False # 10m wind and SAR roughness for first 3 boxes
 WHERE_ARE_THE_BOXES = False # both SAR and LES
 # Geometrical analysis -------------------------------------------------
-PLOT_2D_COVARIANCE  = False 
+PLOT_2D_COVARIANCE  = True 
 PLOT_2D_SKEWNESS    = False
 S2_ANALYSIS         = False # this tries to fit ellipse on the 2nd order structure function (Brilouet et al. 2024)
 # PLOT_ELLIPSE ?
@@ -70,7 +70,7 @@ PLOT_MEAN_PROGVAR       = False # mean profile in each structures
 PLOT_MEAN_FLX           = False # mean flux profile with contribution from each structures
 PLOT_TopView_with_CS    = False # top view with coherent srtuctures
 CS_LENGTH_WITH_LABEL    = False
-CS_R_EQUIVALENT         = True  # Computes equivalent radius for each structures.
+CS_R_EQUIVALENT         = False  # Computes equivalent radius for each structures.
 
 # folder organisation --------------------------------------------------
 workdir_path = '/home/jacqhugo/WORKDIR/MNH570/'
@@ -247,8 +247,8 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     if PLOT_2D_COVARIANCE:
         print('\n* Plotting 2D covariance')
         N = 2
-        Plot_S_n(dsS2_SAR,'sig0',N,path_save=path_save_geometric)
-        Plot_S_n(dsS2_LES_M10,'M10',N,path_save=path_save_geometric)
+        Plot_S_n(dsS2_SAR,'sig0',N,path_txt=path_data_turb,path_save=path_save_geometric)
+        Plot_S_n(dsS2_LES_M10,'M10',N,path_txt=path_data_turb,path_save=path_save_geometric)
     if PLOT_2D_SKEWNESS:
         print('\n* Plotting 2D skewness')
         N = 3
@@ -303,7 +303,6 @@ if __name__ == "__main__":  # This avoids infinite subprocess creation
     # > LES
     #       récupérer distribution de la taille des updrafts en fonction de l'altitude( 2 méthodes, ellipse ou rayon eq.)
     # ajuster colorbar des fonctions de structure
-    # paralléliser le calcul de fonction de structure
 
     # - Compute L Obukhov for both LES and SAR
     # LES : use L_Obukhov(tht0,u_star,surf_wtht_flx) from module_tool
