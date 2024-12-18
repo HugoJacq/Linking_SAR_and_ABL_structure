@@ -183,11 +183,12 @@ tical structure of the MABL ?
 
 ### 4.2 What I have done
 
+- the grid nesting setup is ok to have a turbulent inflow. A written conclusion is available in the latex file. This could be improved by doing the same analysis on a bigger domain to have more converged spectra.
 - a first simulation with ERA5-like atmospheric conditions, other need to be defined in the Namlist injector `setup_big.py`.
 - generator of boxe for boxe SAR and LES (+ mean variables, mean flux for each boxes in the LES).
 - a function that computes the Nth order structure function. I plotted results with N = 2.
-- the grid nesting setup is ok to have a turbulent inflow. A written conclusion is available in the latex file. This could be improved by doing the same analysis on a bigger domain to have more converged spectra.
 - a function that computes the equivalent radius for coherent structure at each altitude, for each object.
+- a function that plots the contribution of each coherent structure to the turbulent fluxes (uw and wthtv).
 
 ### 4.3 What I think needs to be done
 
