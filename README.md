@@ -92,6 +92,7 @@ We used MesoNH version 5.7.0 to produce the simulations ([Lafore et al. 2018](ht
 You will need to modify the code. The modification allows the emission of two surface tracer and also the output of some subgrid fluxes.
 Please follow the procedure described in the section 2.1 of [this](https://github.com/HugoJacq/ABL_response_to_SST_front/edit/main/), with the files from the folder `user_modification` and by replacing the version of MesoNH with the version 5.7.0
 
+Notes: If you want to get cloud mixing ratio (RCT) in the output files, you will have to copy what i have done for RVT in `mode_io_field_write.f90`. If you want to use MNH version 5.7.1 or higher, you will need to adapt the user modification for them to work with this newer version.-
 ### 1.2 Overview of the simulation
 
 The goal is to produce a simulation that can be compared to SAR data. We use a SST as forcing (no coupling with the ocean). The case studied is the Agulhas current on the 10th of December 2015. We used a semi-realistic configuration: we use a grid-nesting setup with the father having cyclic conditions in the mean (zonal) wind direction  and open boundary conditions at North and South boundaries. The horizontal resolution is 200m with a timestep of 4s. The father domain is represented by the dark rectangle on the first image. After a 4h spinup, we spawn a smaller domain (the 'son') at 50m resolution and with a timestep of 1s (green rectangle on the first image).
